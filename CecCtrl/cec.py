@@ -59,7 +59,7 @@ class CecMessage:
                 elif fmt == "p":
                     if len(self.data) - paramIndex < 2:
                         break
-                    value = self.data[0] << 8 | self.data[1]
+                    value = self.data[paramIndex] << 8 | self.data[paramIndex + 1]
                     result += " %d" % (value >> 12)
                     for i in range(3):
                         result += ":%d" % ((value >> (2 - i) * 4) & 0xf)
