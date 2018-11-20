@@ -25,18 +25,25 @@ from CecCtrl.cec import CecMessage
 
 class Test(unittest.TestCase):
 
-
-    def testVersion(self):
-        self.assertEqual(CecMessage(0, 0, 0x9e, [5]).to_string(), 
-                         "0->0: 9E 05 <CEC Version>  Version: 1.4")
-
     def testAbort(self):
         self.assertEqual(CecMessage(0, 0, 0, [0]).to_string(), 
                          "0->0: 00 00 <Feature Abort> Unrecognized opcode")
 
+    def testPhysical(self):
+        self.assertEqual(CecMessage(0, 0, 0x84, [0x12, 0x34, 3]).to_string(), 
+                         "0->0: 84 12 34 03 <Report Physical Address> 1:2:3:4 Tuner")
+
     def testPower(self):
         self.assertEqual(CecMessage(0, 0, 0x90, [1]).to_string(), 
                          "0->0: 90 01 <Report Power Status> (Standby)")
+
+    def testString(self):
+        self.assertEqual(CecMessage(0, 0, 0x47, [ord('T'), ord('V')]).to_string(), 
+                         '0->0: 47 54 56 <Set OSD Name> "TV"')
+
+    def testVersion(self):
+        self.assertEqual(CecMessage(0, 0, 0x9e, [5]).to_string(), 
+                         "0->0: 9E 05 <CEC Version>  Version: 1.4")
 
 
 if __name__ == "__main__":
