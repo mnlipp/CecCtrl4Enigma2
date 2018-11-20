@@ -45,7 +45,7 @@ class E2Adapter(Component):
                         self.fire(
                             cec_msg(
                                 CecMessage(obj.getLogicalAddress(), 
-                                           addr, cmd, list(map(ord,data[0:length-1])))))
+                                           addr, cmd, list(map(ord,data[0:length])))))
                         return sendFunc(obj, addr, cmd, data, length)
                     setattr(eHdmiCEC, "sendMessage", 
                             new.instancemethod(wrapped, None, eHdmiCEC))
