@@ -69,7 +69,11 @@ class CecMessage:
                         result += " " + powerStatus[self.data[paramIndex]]
                     paramIndex += 1
                 elif fmt == "s":
-                    result += ' "' + "".join(list(map(chr,self.data[paramIndex:]))) + '"' 
+                    try:
+                        s = "".join(list(map(chr,self.data[paramIndex:])))
+                        result += ' "' + s.encode("string-escape") + '"'
+                    except:
+                        pass 
                     paramIndex = len(self.data)
                 elif fmt == "V":
                     if self.data[paramIndex] < len(cecVersion):
