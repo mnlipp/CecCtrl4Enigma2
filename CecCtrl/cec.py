@@ -18,6 +18,7 @@
 
 .. moduleauthor:: mnl
 """
+from datetime import datetime
 
 class CecMessage:
 

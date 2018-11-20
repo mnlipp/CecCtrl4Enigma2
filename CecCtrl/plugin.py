@@ -1,7 +1,6 @@
 from Plugins.Plugin import PluginDescriptor
 from .server import CecCtrlServer
 from .e2adapter import E2Adapter
-from circuits.core.debugger import Debugger
 
 def plugin_start(reason, **kwargs):
 	print "[CecCtrl] reason = " + str(reason)
@@ -24,7 +23,6 @@ def plugin_start(reason, **kwargs):
 	server = CecCtrlServer(CONFIG, { "config_dir": "/etc/cecctrl",
 								"app_dir": "/var/lib/cecctrl" })
 	E2Adapter().register(server)
-	Debugger().register(server)
 	server.start()
 
 def Plugins(**kwargs):

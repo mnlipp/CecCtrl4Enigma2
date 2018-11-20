@@ -27,14 +27,14 @@ import logging
 from posixpath import dirname
 from circuits.core.components import Component
 from circuits.core.events import Event
-import cec
-from .cec import CecMessage
 from circuits_bricks.app.logger import log
+from datetime import datetime
 
 class cec_msg(Event):
     
     def __init__(self, msg, *args, **kwargs):
         super(cec_msg, self).__init__(*args, **kwargs)
+        self.timestamp = datetime.now()
         self.msg = msg
     
 class MonitorPage(TemplateController):
@@ -71,15 +71,17 @@ class MessageMonitor(Component):
         self._connected.remove(sock)
 
     def read(self, sock, data):
-        socks = self._connected[:]
-        for client in socks:
-            try:
-                self.fireEvent(write(client, "Received: " + data))
-            except:
-                self._connected.remove(client)
+        pass
 
     @handler("cec_msg", channel="cec")
     def _on_cec_msg(self, event):
         if event.msg.cmd == 0 and len(event.msg.data) == 0:
             return
-        self.fire(log(logging.DEBUG, event.msg.to_string()), "logger")
+        entry = event.timestamp.strftime("%X.%f")[:-3] + ": " + event.msg.to_string()
+        self.fire(log(logging.DEBUG, entry), "logger")
+        socks = self._connected[:]
+        for client in socks:
+            try:
+                self.fireEvent(write(client, entry))
+            except:
+                self._connected.remove(client)

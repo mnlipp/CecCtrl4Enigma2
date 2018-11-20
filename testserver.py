@@ -12,7 +12,7 @@ class DummyAdapter(Component):
     
     def __init__(self, *args, **kwargs):
         super(DummyAdapter, self).__init__(*args, **kwargs)
-        Timer(5, cec_msg(CecMessage(0, 0, 0x84, [0])), persist=True).register(self)
+        Timer(5, cec_msg(CecMessage(0, 0, 0x84, [0x40, 0, 5])), persist=True).register(self)
 
 if __name__ == '__main__':
 
