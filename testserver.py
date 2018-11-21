@@ -3,8 +3,9 @@ from CecCtrl import CecCtrlServer
 from circuits.core.debugger import Debugger
 from circuits.core.components import Component
 from circuits_bricks.core.timers import Timer
-from CecCtrl.monitor import cec_msg
 from CecCtrl.cec import CecMessage
+from CecCtrl.events import cec_write, cec_read
+from circuits.core.handlers import handler
 
 class DummyAdapter(Component):
 
@@ -12,7 +13,12 @@ class DummyAdapter(Component):
     
     def __init__(self, *args, **kwargs):
         super(DummyAdapter, self).__init__(*args, **kwargs)
-        Timer(5, cec_msg(CecMessage(0, 0, 0x84, [0x40, 0, 5])), persist=True).register(self)
+        Timer(5, cec_read(CecMessage(0, 0, 0x84, [0x40, 0, 5])), persist=True).register(self)
+
+    @handler("cec_write")
+    def _on_cec_write(self, event):
+        event.msg.srcAddr = 0
+        self.fire(cec_read(event.msg))
 
 if __name__ == '__main__':
 

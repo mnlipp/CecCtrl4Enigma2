@@ -26,17 +26,10 @@ import os
 import logging
 from posixpath import dirname
 from circuits.core.components import Component
-from circuits.core.events import Event
 from circuits_bricks.app.logger import log
-from datetime import datetime
+from .cec import cecCommands, CecMessage
+from .events import cec_write
 
-class cec_msg(Event):
-    
-    def __init__(self, msg, *args, **kwargs):
-        super(cec_msg, self).__init__(*args, **kwargs)
-        self.timestamp = datetime.now()
-        self.msg = msg
-    
 class MonitorPage(TemplateController):
 
     channel= "/monitor"
@@ -54,7 +47,8 @@ class MonitorPage(TemplateController):
         if request.path.endswith("/socket"):
             # Let WebSocket dispatch handle this...
             return
-        return self.serve_tenjin(request, response, "monitor.pyhtml", {})
+        return self.serve_tenjin(request, response, "monitor.pyhtml", 
+                                 {"cecCommands": cecCommands})
   
 class MessageMonitor(Component):
 
@@ -71,10 +65,18 @@ class MessageMonitor(Component):
         self._connected.remove(sock)
 
     def read(self, sock, data):
-        pass
+        try:
+            addrCmd = data.split("<")
+            addr = int(addrCmd[0])
+            opData = addrCmd[1].strip().split(":")
+            opCode = int(opData[0], 0x10)
+            data = map(lambda x: int(x, 0x10), opData[1:])
+            self.fire(cec_write(CecMessage(None, addr, opCode, data)), "cec")
+        except:
+            pass
 
-    @handler("cec_msg", channel="cec")
-    def _on_cec_msg(self, event):
+    @handler("cec_read", channel="cec")
+    def _on_cec_read(self, event):
         if event.msg.cmd == 0 and len(event.msg.data) == 0:
             return
         entry = event.timestamp.strftime("%X.%f")[:-3] + ": " + event.msg.to_string()

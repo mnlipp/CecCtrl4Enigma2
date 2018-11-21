@@ -21,9 +21,10 @@
 from circuits.core.components import Component
 from enigma import eHdmiCEC
 from .ebrigde import blockingCallOnMainThread
-from .monitor import cec_msg
+from .events import cec_read
 import new
 from .cec import CecMessage
+from circuits.core.handlers import handler
 
 class E2Adapter(Component):
     
@@ -43,7 +44,7 @@ class E2Adapter(Component):
                 if sendFunc:
                     def wrapped(obj, addr, cmd, data, length):
                         self.fire(
-                            cec_msg(
+                            cec_read(
                                 CecMessage(obj.getLogicalAddress(), 
                                            addr, cmd, list(map(ord,data[0:length])))))
                         return sendFunc(obj, addr, cmd, data, length)
@@ -58,6 +59,12 @@ class E2Adapter(Component):
         buf = 16 * '\x00'
         length = message.getData(buf, len(buf))
         data = list(map(ord,buf[0:length-1]))
-        self.fire(cec_msg(CecMessage(message.getAddress(), 
+        self.fire(cec_read(CecMessage(message.getAddress(), 
                                      eHdmiCEC.getInstance().getLogicalAddress(), cmd, data)))
+        
+    @handler("cec_write")
+    def _on_cec_write(self, event):
+        event.msg.srcAddr = eHdmiCEC.getInstance().getLogicalAddress()
+        dataStr = "".join(map(chr, event.msg.data))
+        eHdmiCEC.getInstance().sendMessage(event.msg.dstAddr, event.msg.cmd, dataStr, len(dataStr))
         
