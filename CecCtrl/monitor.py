@@ -29,6 +29,7 @@ from circuits.core.components import Component
 from circuits_bricks.app.logger import log
 from .cec import cecCommands, CecMessage
 from .events import cec_write
+from datetime import datetime
 
 class MonitorPage(TemplateController):
 
@@ -71,15 +72,22 @@ class MessageMonitor(Component):
             opData = addrCmd[1].strip().split(":")
             opCode = int(opData[0], 0x10)
             data = map(lambda x: int(x, 0x10), opData[1:])
-            self.fire(cec_write(CecMessage(None, addr, opCode, data)), "cec")
+            self.fire(cec_write(CecMessage(16, addr, opCode, data)), "cec")
         except:
             pass
 
     @handler("cec_read", channel="cec")
     def _on_cec_read(self, event):
-        if event.msg.cmd == 0 and len(event.msg.data) == 0:
+        self._add_message(event.msg, event.timestamp)
+
+    @handler("cec_write", channel="cec")
+    def _on_cec_write(self, event):
+        self._add_message(event.msg, datetime.now())
+
+    def _add_message(self, msg, timestamp):
+        if msg.cmd == 0 and len(msg.data) == 0:
             return
-        entry = event.timestamp.strftime("%X.%f")[:-3] + ": " + event.msg.to_string()
+        entry = timestamp.strftime("%X.%f")[:-3] + ": " + msg.to_string()
         self.fire(log(logging.DEBUG, entry), "logger")
         socks = self._connected[:]
         for client in socks:

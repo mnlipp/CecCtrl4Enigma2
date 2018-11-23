@@ -18,7 +18,7 @@ class DummyAdapter(Component):
     @handler("cec_write")
     def _on_cec_write(self, event):
         event.msg.srcAddr = 0
-        self.fire(cec_read(event.msg))
+        print event.msg.to_string()
 
 if __name__ == '__main__':
 
@@ -34,7 +34,7 @@ if __name__ == '__main__':
             "port": "8123",
         },
     }
-
+    
     server = CecCtrlServer(CONFIG, {})
     Debugger().register(server)
     DummyAdapter().register(server)
