@@ -26,6 +26,7 @@ from circuits_bricks.app import Application
 from posixpath import dirname
 from circuits.web.dispatchers.static import Static
 from .monitor import MonitorPage
+from .remote import RemotePage
 
 class Root(Controller):
 
@@ -50,6 +51,7 @@ class CecCtrlServer(Application):
                channel="ctrl-ui").register(server)
         Root().register(server)
         MonitorPage().register(server)
+        RemotePage().register(server)
         
         from circuits.tools import graph
         print graph(self)
