@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CEC Monitor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <link rel="stylesheet" href="static/css/normalize.css">
-  <script src="static/js/modernizr-3.6.0.min.js"></script>
-  <script src="static/js/jquery/jquery-3.3.1.min.js"></script>
+  <link rel="stylesheet" href="static/lib/normalize.css">
+  <script src="static/lib/modernizr-3.6.0.min.js"></script>
+  <script src="static/lib/jquery/jquery-3.3.1.min.js"></script>
   <link rel="stylesheet" href="static/css/monitor.css">
 </head>
 

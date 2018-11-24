@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CEC Remote</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="static/lib/normalize.css">
+  <script src="static/lib/modernizr-3.6.0.min.js"></script>
+  <script src="static/lib/jquery/jquery-3.3.1.min.js"></script>
+  <link rel="stylesheet" href="static/lib/fontawesome-free-5.2.0-web/css/all.css">
+  <link rel="stylesheet" href="static/css/remote.css">
+</head>
+
+<body>
+
+  <div class="ctrl-panel">
+  
+    <div class="ctrl-button-row">
+      <div class="ctrl-button">
+        <button>Test</button>
+      </div>
+      <div class="ctrl-button">
+        <button>Test</button>
+      </div>
+      <div class="ctrl-button">
+        <button>Test</button>
+      </div>
+      <div class="ctrl-button">
+        <button>Test</button>
+      </div>
+    </div>
+ 
+    <div class="ctrl-button-row">
+      <div class="ctrl-button">
+        <button>Test</button>
+      </div>
+      <div class="ctrl-button">
+        <button>Test</button>
+      </div>
+      <div class="ctrl-button">
+        <button>Test</button>
+      </div>
+      <div class="ctrl-button">
+        <button>Test</button>
+      </div>
+    </div>
+ 
+    <div class="ctrl-button-row">
+      <div class="ctrl-button">
+        <button>1</button>
+      </div>
+      <div class="ctrl-button">
+        <button>2</button>
+      </div>
+      <div class="ctrl-button">
+        <button>3</button>
+      </div>
+      <div class="ctrl-button">
+        <button>Test</button>
+      </div>
+    </div>
+ 
+    <div class="ctrl-button-row">
+      <div class="ctrl-button">
+        <button>4</button>
+      </div>
+      <div class="ctrl-button">
+        <button>5</button>
+      </div>
+      <div class="ctrl-button">
+        <button>6</button>
+      </div>
+      <div class="ctrl-button">
+        <button>Test</button>
+      </div>
+    </div>
+ 
+    <div class="ctrl-button-row">
+      <div class="ctrl-button">
+        <button>7</button>
+      </div>
+      <div class="ctrl-button">
+        <button>8</button>
+      </div>
+      <div class="ctrl-button">
+        <button>9</button>
+      </div>
+      <div class="ctrl-button">
+        <button>Test</button>
+      </div>
+    </div>
+ 
+    <div class="ctrl-button-row">
+      <div class="ctrl-button">
+        <button>Test</button>
+      </div>
+      <div class="ctrl-button">
+        <button>0</button>
+      </div>
+      <div class="ctrl-button">
+        <button>Test</button>
+      </div>
+      <div class="ctrl-button">
+        <button>Test</button>
+      </div>
+    </div>
+ 
+  </div>
+
+</body>
+</html>
