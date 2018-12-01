@@ -34,16 +34,16 @@
  
     <div class="ctrl-button-row">
       <div class="ctrl-button">
-        <button>Test</button>
+        <button>Menu</button>
       </div>
       <div class="ctrl-button">
-        <button>Test</button>
+        <button>Info</button>
       </div>
       <div class="ctrl-button">
-        <button>Test</button>
+        <button>OK</button>
       </div>
       <div class="ctrl-button">
-        <button>Test</button>
+        <button><i class="fas fa-chevron-up"></i></button>
       </div>
     </div>
  
@@ -58,7 +58,7 @@
         <button>3</button>
       </div>
       <div class="ctrl-button">
-        <button>Test</button>
+        <button><i class="fas fa-chevron-down"></i></button>
       </div>
     </div>
  
@@ -73,7 +73,7 @@
         <button>6</button>
       </div>
       <div class="ctrl-button">
-        <button>Test</button>
+        <button><i class="fas fa-volume-up"></i></button>
       </div>
     </div>
  
@@ -88,22 +88,22 @@
         <button>9</button>
       </div>
       <div class="ctrl-button">
-        <button>Test</button>
+        <button><i class="fas fa-volume-down"></i></button>
       </div>
     </div>
  
     <div class="ctrl-button-row">
       <div class="ctrl-button">
-        <button>Test</button>
+        <button><i class="fas fa-chevron-left"></i></button>
       </div>
       <div class="ctrl-button">
         <button>0</button>
       </div>
       <div class="ctrl-button">
-        <button>Test</button>
+        <button><i class="fas fa-chevron-right"></i></button>
       </div>
       <div class="ctrl-button">
-        <button>Test</button>
+        <button><i class="fas fa-arrow-circle-right"></i></button>
       </div>
     </div>
  

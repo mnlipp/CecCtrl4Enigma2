@@ -30,6 +30,7 @@ from circuits_bricks.app.logger import log
 from .cec import cecCommands, CecMessage
 from .events import cec_write
 from datetime import datetime
+from CecCtrl.cec import abortReason, powerStatus, deviceType, userControlCode
 
 class MonitorPage(TemplateController):
 
@@ -49,7 +50,11 @@ class MonitorPage(TemplateController):
             # Let WebSocket dispatch handle this...
             return
         return self.serve_tenjin(request, response, "monitor.pyhtml", 
-                                 {"cecCommands": cecCommands})
+                                 {"cecCommands": cecCommands,
+                                  "abortReason": abortReason,
+                                  "powerStatus": powerStatus,
+                                  "deviceType": deviceType,
+                                  "userControlCode": userControlCode})
   
 class MessageMonitor(Component):
 

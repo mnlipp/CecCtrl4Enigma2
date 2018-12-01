@@ -3,8 +3,17 @@
     top: 1em;
     right: 1em;
     border: 3px solid #73AD21;
+    background-color: white;
 }
 
-#msg_target {
+input.targetAddress {
     width: 2em;
+}
+
+input.physicalAddress {
+	width: 4em;
+}
+
+input.physicalAddress.erroneous {
+	background-color: orangered;
 }
