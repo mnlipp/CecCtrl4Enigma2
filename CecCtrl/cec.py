@@ -167,8 +167,8 @@ cecCommands = {
     0xc3: ("<Request ARC Initiation>", ""),
     0xc4: ("<Request ARC Termination>", ""),
     0xc5: ("<Terminate ARC>", ""),
-    0xf8: ("<CDC Message>", "B"),
-    0xff: ("<Abort>", "o"),
+    0xf8: ("<CDC Message>", "oB"),
+    0xff: ("<Abort>", ""),
     }
 # returned abort codes:
 abortReason = {

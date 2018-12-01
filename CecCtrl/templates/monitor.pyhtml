@@ -33,10 +33,7 @@
 
   <script type="x-template" id="cecArgumentInput">
  	<span>
-      <cec-opaque-input v-if="currentType == 'b' || currentType == 's' || currentType == 'o'"
-		v-bind:command-string="commandString"
-    	v-bind:remaining-argument-types="remainingArgumentTypes"></cec-opaque-input>
-      <cec-physical-input v-else-if="currentType == 'p'"
+      <cec-physical-input v-if="currentType == 'p'"
 		v-bind:command-string="commandString"
     	v-bind:remaining-argument-types="remainingArgumentTypes"></cec-physical-input>
       <cec-abort-reason-input v-else-if="currentType == 'A'"
@@ -54,6 +51,9 @@
       <cec-user-control-code-input v-else-if="currentType == 'U'"
 		v-bind:command-string="commandString"
     	v-bind:remaining-argument-types="remainingArgumentTypes"></cec-user-control-code-input>
+      <cec-opaque-input v-else-if="currentType != ''"
+		v-bind:command-string="commandString"
+    	v-bind:remaining-argument-types="[]"></cec-opaque-input>
 	  <template v-else>
         <cec-final-input v-bind:command-string="commandString"></cec-final-Input>
 	  </template>
