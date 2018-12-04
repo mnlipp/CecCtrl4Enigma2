@@ -92,6 +92,9 @@ Vue.component("cec-argument", {
         broadcastOnly: function() {
             return this.$parent.broadcastOnly;
         },
+        commandCode: function() {
+            return this.$parent.commandCode;
+        },
     },
     template: "#cecArgumentInput",
 });
@@ -123,6 +126,9 @@ Vue.component("cec-physical-input", {
         },
         broadcastOnly: function() {
             return this.$parent.broadcastOnly;
+        },
+        commandCode: function() {
+            return this.$parent.commandCode;
         },
     },
     methods: {
@@ -163,6 +169,9 @@ Vue.component("cec-abort-reason-input", {
         broadcastOnly: function() {
             return this.$parent.broadcastOnly;
         },
+        commandCode: function() {
+            return this.$parent.commandCode;
+        },
     },
     methods: {
         appendReason: function(current) {
@@ -200,6 +209,9 @@ Vue.component("cec-power-status-input", {
     computed: {
         broadcastOnly: function() {
             return this.$parent.broadcastOnly;
+        },
+        commandCode: function() {
+            return this.$parent.commandCode;
         },
     },
     methods: {
@@ -239,6 +251,9 @@ Vue.component("cec-device-type-input", {
         broadcastOnly: function() {
             return this.$parent.broadcastOnly;
         },
+        commandCode: function() {
+            return this.$parent.commandCode;
+        },
     },
     methods: {
         appendDevice: function(current) {
@@ -269,7 +284,7 @@ Vue.component("cec-user-control-code-input", {
     },
     data: function() {
         return {
-            uccAsString: "0",
+            uccAsString: 0,
             userControlCode: cecMonitor.userControlCode,
         };
     },
@@ -277,16 +292,21 @@ Vue.component("cec-user-control-code-input", {
         broadcastOnly: function() {
             return this.$parent.broadcastOnly;
         },
+        commandCode: function() {
+            return this.$parent.commandCode;
+        },
     },
     methods: {
         appendUcc: function(current) {
-            return current + ":" + this.uccAsString;
+            return current + ":" + parseInt(this.uccAsString).toString(16);
         }
     },
     template: '\
         <span> \
           <select v-model="uccAsString"> \
-            <option v-for="selectValue in Object.keys(userControlCode)" v-bind:value="selectValue.toString(0x10)">{{ userControlCode[selectValue] }}</option> \
+            <option v-for="selectValue in Object.keys(userControlCode)" \
+              v-bind:value="selectValue">{{ userControlCode[selectValue] }} \
+              ({{ ("0" + parseInt(selectValue).toString(16).toUpperCase()).substr(-2) }})</option> \
           </select> \
           <cec-argument \
               v-bind:command-string="appendUcc(commandString)" \
@@ -314,6 +334,9 @@ Vue.component("cec-opaque-input", {
         broadcastOnly: function() {
             return this.$parent.broadcastOnly;
         },
+        commandCode: function() {
+            return this.$parent.commandCode;
+        },
     },
     methods: {
         appendArgs: function(current) {
@@ -338,11 +361,15 @@ Vue.component("cec-final-input", {
     data: function() {
         return {
             target: "",
+            autoRelease: false,
         };
     },
     computed: {
         broadcastOnly: function() {
             return this.$parent.broadcastOnly;
+        },
+        commandCode: function() {
+            return this.$parent.commandCode;
         },
         targetAddress: function() {
             if (this.broadcastOnly) {
@@ -354,10 +381,17 @@ Vue.component("cec-final-input", {
     methods: {
         submit: function() {
             send(this.targetAddress, this.commandString);
+            if (this.autoRelease) {
+                send(this.targetAddress, "45");
+            }
         }
     },
     template: '\
         <span> \
+          <span v-if="commandCode == 0x44"> \
+            <input id="auto-release-check-box" type="checkbox" v-model="autoRelease"> \
+            <label for="auto-release-check-box">auto release</label> \
+          </span> \
           to <span v-if="broadcastOnly">15</span> \
           <input v-else v-model="target" class="targetAddress" type="text" /> \
           <button type="button" v-on:click="submit()">Send</button> \
