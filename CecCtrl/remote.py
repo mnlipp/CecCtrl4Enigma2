@@ -23,6 +23,7 @@ from circuits.core.handlers import handler
 from circuits.web.websockets.dispatcher import WebSocketsDispatcher
 from circuits.io.events import write
 import os
+import json
 import logging
 from posixpath import dirname
 from circuits.core.components import Component
@@ -66,12 +67,13 @@ class RemoteControl(Component):
 
     def read(self, sock, data):
         try:
-            addrCmd = data.split("<")
-            addr = int(addrCmd[0])
-            opData = addrCmd[1].strip().split(":")
-            opCode = int(opData[0], 0x10)
-            data = map(lambda x: int(x, 0x10), opData[1:])
-            self.fire(cec_write(CecMessage(16, addr, opCode, data)), "cec")
+            cmd = json.loads(data)
+            if "key" in cmd:
+                self._key_cmd(cmd["key"])
         except:
             pass
 
+    def _key_cmd(self, args):
+        code = args["code"]
+        self.fire(cec_write(CecMessage(16, 3, 0x44, [code])), "cec")
+        self.fire(cec_write(CecMessage(16, 3, 0x45, [])), "cec")

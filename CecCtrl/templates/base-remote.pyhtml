@@ -9,7 +9,9 @@
   <link rel="stylesheet" href="static/lib/normalize.css">
   <script src="static/lib/modernizr-3.6.0.min.js"></script>
   <script src="static/lib/jquery/jquery-3.3.1.min.js"></script>
-  <link rel="stylesheet" href="static/lib/fontawesome-free-5.2.0-web/css/all.css">
+  <script src="static/lib/vue-2.5.17/vue.js"></script>
+  <script src="static/js/remote.js"></script>
+  <link rel="stylesheet" href="static/lib/fontawesome-free-5.5.0-web/css/all.css">
   <link rel="stylesheet" href="static/css/remote.css">
 </head>
 
@@ -18,90 +20,96 @@
   <div class="ctrl-panel">
   
     <div class="ctrl-button-row">
+      <cec-remote-button v-bind:label="'<i class=\x27fas fa-list\x27></i>'" 
+        v-bind:code="1"></cec-remote-button>
+      <div class="ctrl-button">
+        <button>Test</button>
+      </div>
+      <cec-remote-button v-bind:label="'<i class=\x27fas fa-chevron-up\x27></i>'" 
+        v-bind:code="1"></cec-remote-button>
       <div class="ctrl-button">
         <button>Test</button>
       </div>
       <div class="ctrl-button">
         <button>Test</button>
       </div>
+    </div>
+ 
+    <div class="ctrl-button-row">
+      <cec-remote-button v-bind:label="'Help'" 
+        v-bind:code="0x36"></cec-remote-button>
+      <cec-remote-button v-bind:label="'<i class=\x27fas fa-chevron-left\x27></i>'" 
+        v-bind:code="3"></cec-remote-button>
+      <cec-remote-button v-bind:label="'OK'" 
+        v-bind:code="0"></cec-remote-button>
+      <cec-remote-button v-bind:label="'<i class=\x27fas fa-chevron-right\x27></i>'" 
+        v-bind:code="4"></cec-remote-button>
       <div class="ctrl-button">
         <button>Test</button>
       </div>
-      <div class="ctrl-button">
-        <button>Test</button>
-      </div>
     </div>
  
     <div class="ctrl-button-row">
-      <div class="ctrl-button">
-        <button>Menu</button>
-      </div>
-      <div class="ctrl-button">
-        <button>Info</button>
-      </div>
-      <div class="ctrl-button">
-        <button>OK</button>
-      </div>
-      <div class="ctrl-button">
-        <button><i class="fas fa-chevron-up"></i></button>
-      </div>
+      <cec-remote-button v-bind:label="'<div class=\x27label-rect-red\x27></div>'" 
+        v-bind:code="0x72"></cec-remote-button>
+      <cec-remote-button v-bind:label="'<div class=\x27label-rect-green\x27></div>'" 
+        v-bind:code="0x73"></cec-remote-button>
+      <cec-remote-button v-bind:label="'<i class=\x27fas fa-chevron-down\x27></i>'" 
+        v-bind:code="2"></cec-remote-button>
+      <cec-remote-button v-bind:label="'<div class=\x27label-rect-yellow\x27></div>'" 
+        v-bind:code="0x74"></cec-remote-button>
+      <cec-remote-button v-bind:label="'<div class=\x27label-rect-blue\x27></div>'" 
+        v-bind:code="0x71"></cec-remote-button>
     </div>
  
     <div class="ctrl-button-row">
-      <div class="ctrl-button">
-        <button>1</button>
-      </div>
-      <div class="ctrl-button">
-        <button>2</button>
-      </div>
-      <div class="ctrl-button">
-        <button>3</button>
-      </div>
-      <div class="ctrl-button">
-        <button><i class="fas fa-chevron-down"></i></button>
-      </div>
+      <cec-remote-button v-bind:label="'Menu'" 
+        v-bind:code="0x9"></cec-remote-button>
+      <cec-remote-button v-bind:label="'1'" 
+        v-bind:code="0x21"></cec-remote-button>
+      <cec-remote-button v-bind:label="'2'" 
+        v-bind:code="0x22"></cec-remote-button>
+      <cec-remote-button v-bind:label="'3'" 
+        v-bind:code="0x23"></cec-remote-button>
+      <cec-remote-button v-bind:label="'<i class=\x27fas fa-volume-up\x27></i>'" 
+        v-bind:code="0x41"></cec-remote-button>
     </div>
  
     <div class="ctrl-button-row">
-      <div class="ctrl-button">
-        <button>4</button>
-      </div>
-      <div class="ctrl-button">
-        <button>5</button>
-      </div>
-      <div class="ctrl-button">
-        <button>6</button>
-      </div>
-      <div class="ctrl-button">
-        <button><i class="fas fa-volume-up"></i></button>
-      </div>
+      <cec-remote-button v-bind:label="'Cont.'" 
+        v-bind:code="0xb"></cec-remote-button>
+      <cec-remote-button v-bind:label="'4'" 
+        v-bind:code="0x24"></cec-remote-button>
+      <cec-remote-button v-bind:label="'5'" 
+        v-bind:code="0x25"></cec-remote-button>
+      <cec-remote-button v-bind:label="'6'" 
+        v-bind:code="0x26"></cec-remote-button>
+      <cec-remote-button v-bind:label="'<i class=\x27fas fa-volume-down\x27></i>'" 
+        v-bind:code="0x42"></cec-remote-button>
     </div>
  
     <div class="ctrl-button-row">
-      <div class="ctrl-button">
-        <button>7</button>
-      </div>
-      <div class="ctrl-button">
-        <button>8</button>
-      </div>
-      <div class="ctrl-button">
-        <button>9</button>
-      </div>
-      <div class="ctrl-button">
-        <button><i class="fas fa-volume-down"></i></button>
-      </div>
+      <cec-remote-button v-bind:label="'Fav.'" 
+        v-bind:code="0xc"></cec-remote-button>
+      <cec-remote-button v-bind:label="'7'" 
+        v-bind:code="0x27"></cec-remote-button>
+      <cec-remote-button v-bind:label="'8'" 
+        v-bind:code="0x28"></cec-remote-button>
+      <cec-remote-button v-bind:label="'9'" 
+        v-bind:code="0x29"></cec-remote-button>
+      <cec-remote-button v-bind:label="'<i class=\x27fas fa-volume-mute\x27></i>'" 
+        v-bind:code="0x43"></cec-remote-button>
     </div>
  
     <div class="ctrl-button-row">
-      <div class="ctrl-button">
-        <button><i class="fas fa-chevron-left"></i></button>
-      </div>
-      <div class="ctrl-button">
-        <button>0</button>
-      </div>
-      <div class="ctrl-button">
-        <button><i class="fas fa-chevron-right"></i></button>
-      </div>
+      <cec-remote-button v-bind:label="'Media'" 
+        v-bind:code="0x10"></cec-remote-button>
+      <cec-remote-button v-bind:label="'Ctx'" 
+        v-bind:code="0x11"></cec-remote-button>
+      <cec-remote-button v-bind:label="'0'" 
+        v-bind:code="0x20"></cec-remote-button>
+      <cec-remote-button v-bind:label="'Exit'" 
+        v-bind:code="0x0d"></cec-remote-button>
       <div class="ctrl-button">
         <button><i class="fas fa-arrow-circle-right"></i></button>
       </div>

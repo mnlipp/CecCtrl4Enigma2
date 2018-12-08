@@ -80,12 +80,12 @@ class E2Adapter(Component):
             0x08: -1, # "Left-Down",
             0x09: 139, # "Root Menu" -> "KEY_MENU"
             0x0A: -1, # "Setup Menu",
-            0x0B: 393, # "Contents Menu" -> "KEY_VIDEO"
+            0x0B: 366, # "Contents Menu" -> "KEY_PVR"
             0x0C: 364, # "Favorite Menu" -> "KEY_FAVORITES"
             0x0D: 174, # "Exit" -> "KEY_EXIT"
             0x0E: -1, # "Reserved",
             0x0F: -1, # "Reserved",
-            0x10: -1, # "Media Top Menu",
+            0x10: 226, # "Media Top Menu" -> "KEY_MEDIA"
             0x11: 438, # "Media Context-sensitive Menu" -> "KEY_CONTEXT_MENU"
             0x1D: -1, # "Number Entry Mode",
             0x1E: -1, # "Number 11",
