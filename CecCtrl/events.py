@@ -28,8 +28,24 @@ class cec_read(Event):
         self.timestamp = datetime.now()
         self.msg = msg
     
+    def __str__(self):
+        return "cec_read(" + str(self.timestamp) + ", " + str(self.msg) + ")"
+    
 class cec_write(Event):
     
     def __init__(self, msg, *args, **kwargs):
         super(cec_write, self).__init__(*args, **kwargs)
         self.msg = msg
+
+    def __str__(self):
+        return "cec_write(" + str(self.msg) + ")"
+
+class dev_update(Event):
+    
+    def __init__(self, device, *args, **kwargs):
+        super(dev_update, self).__init__(*args, **kwargs)
+        self.device = device
+
+    def __str__(self):
+        return "dev_update(" + str(self.device) + ")"
+    

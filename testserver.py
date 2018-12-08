@@ -13,12 +13,21 @@ class DummyAdapter(Component):
     
     def __init__(self, *args, **kwargs):
         super(DummyAdapter, self).__init__(*args, **kwargs)
-        Timer(5, cec_read(CecMessage(0, 0, 0x84, [0x40, 0, 5])), persist=True).register(self)
+
+    @handler("cec_read", channel="cec")
+    def _on_cec_read(self, event):
+        print "Received: %s" % (event.msg)
 
     @handler("cec_write")
     def _on_cec_write(self, event):
-        event.msg.srcAddr = 0
-        print event.msg.to_string()
+        event.msg.srcAddr = 3
+        msg = event.msg
+        print "Sent: %s" % (msg)
+        if msg.dstAddr == 5:
+            if msg.cmd == 0x83:
+                self.fire(cec_read(CecMessage(5, 3, 0x84, [0x40, 0, 5])))
+            if msg.cmd == 0x46:
+                self.fire(cec_read(CecMessage(5, 3, 0x47, list(map(ord,"A/V Receiver")))))
 
 if __name__ == '__main__':
 

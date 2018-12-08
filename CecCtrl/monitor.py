@@ -92,7 +92,7 @@ class MessageMonitor(Component):
     def _add_message(self, msg, timestamp):
         if msg.cmd == 0 and len(msg.data) == 0:
             return
-        entry = timestamp.strftime("%X.%f")[:-3] + ": " + msg.to_string()
+        entry = timestamp.strftime("%X.%f")[:-3] + ": " + str(msg)
         self.fire(log(logging.DEBUG, entry), "logger")
         socks = self._connected[:]
         for client in socks:

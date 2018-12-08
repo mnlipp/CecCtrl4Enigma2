@@ -18,9 +18,8 @@
 
 .. moduleauthor:: mnl
 """
-from datetime import datetime
 
-class CecMessage:
+class CecMessage(object):
 
     def __init__(self, srcAddr, dstAddr, cmd, data):
         self.srcAddr = srcAddr
@@ -28,7 +27,7 @@ class CecMessage:
         self.cmd = cmd
         self.data = data
         
-    def to_string(self):
+    def __str__(self):
         result = "%d->%d: %02X" % (self.srcAddr, self.dstAddr, self.cmd)
         displayLength = len(self.data)
         for i in range(len(self.data)-1, 0, -1):
@@ -74,10 +73,8 @@ class CecMessage:
                 elif fmt == "p":
                     if len(self.data) - paramIndex < 2:
                         break
-                    value = self.data[paramIndex] << 8 | self.data[paramIndex + 1]
-                    result += " %d" % (value >> 12)
-                    for i in range(3):
-                        result += ":%d" % ((value >> (2 - i) * 4) & 0xf)
+                    result += " "
+                    result += ":".join(map(str,self.physical_at(paramIndex)))
                     paramIndex += 2
                 elif fmt == "s":
                     try:
@@ -92,6 +89,13 @@ class CecMessage:
                     paramIndex += 1;
         else:
             result += " <unknown>"
+        return result
+        
+    def physical_at(self, pos):
+        value = self.data[pos] << 8 | self.data[pos + 1]
+        result = [value >> 12]
+        for i in range(3):
+            result.append((value >> (2 - i) * 4) & 0xf)
         return result
         
 

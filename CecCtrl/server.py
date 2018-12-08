@@ -27,6 +27,7 @@ from posixpath import dirname
 from circuits.web.dispatchers.static import Static
 from .monitor import MonitorPage
 from .remote import RemotePage
+from .devmanager import DeviceManager
 
 class Root(Controller):
 
@@ -49,6 +50,7 @@ class CecCtrlServer(Application):
             .register(self)
         Static("/static", docroot=os.path.join(dirname(__file__), "static"),
                channel="ctrl-ui").register(server)
+        DeviceManager().register(server)
         Root().register(server)
         MonitorPage().register(server)
         RemotePage().register(server)
