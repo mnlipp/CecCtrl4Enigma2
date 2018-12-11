@@ -2,6 +2,58 @@ html, body {
 	height:100%
 }
 
+#ctrl-switches-container {
+	width: 100%;
+	height: 100%;
+	position: fixed; 
+	z-index: 10000;
+}
+
+.ctrl-switches-panel {
+	position: relative;
+	width: 80%;
+	height: 80%;
+	margin: 5vH auto 0 auto;
+	padding: 3em 1em 1em 1em;
+	background-color: white;
+	
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start;
+	align-items: stretch;
+}
+
+.ctrl-switches-button {
+	font-size: 150%;
+	margin-bottom: 0.75em;
+}
+
+.ctrl-switches-off {
+	font-size: 200%;
+	margin: 0 auto 0 auto;
+}
+
+.ctrl-switches-off button {
+	width: 2em !important;
+	height: 2em;
+	margin: 0 auto 0 auto;
+	border-radius: 50%;
+}
+
+.ctrl-switches-button button {
+	width: 100%;
+}
+
+.ctrl-switches-button .fas {
+}
+
+.ctrl-switches-close {
+	position: absolute;
+	right: 0.5em;
+	top: 0.5em;
+}
+
+/* Remote panel */
 
 .ctrl-panel {
 	height: calc(100% - 0.6vw);
@@ -32,6 +84,14 @@ html, body {
 
 .ctrl-button .fas {
 	font-size: 200%;
+}
+
+.ctrl-button .label-circle-red {
+	width: 2em;
+	height: 2em;
+	background: crimson;
+	border-radius: 50%;
+	margin: 0 auto 0 auto;
 }
 
 .ctrl-button .label-rect-red {

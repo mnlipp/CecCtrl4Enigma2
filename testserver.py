@@ -27,7 +27,7 @@ class DummyAdapter(Component):
             if msg.cmd == 0x83:
                 self.fire(cec_read(CecMessage(5, 3, 0x84, [0x40, 0, 5])))
             if msg.cmd == 0x46:
-                self.fire(cec_read(CecMessage(5, 3, 0x47, list(map(ord,"A/V Receiver")))))
+                self.fire(cec_read(CecMessage(5, 3, 0x47, list(map(ord,"Test Server")))))
 
 if __name__ == '__main__':
 

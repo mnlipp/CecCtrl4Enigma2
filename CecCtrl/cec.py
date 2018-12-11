@@ -78,8 +78,7 @@ class CecMessage(object):
                     paramIndex += 2
                 elif fmt == "s":
                     try:
-                        s = "".join(list(map(chr,self.data[paramIndex:])))
-                        result += ' "' + s.encode("string-escape") + '"'
+                        result += ' "' + self.string_at(paramIndex) + '"'
                     except:
                         pass 
                     paramIndex = len(self.data)
@@ -97,6 +96,13 @@ class CecMessage(object):
         for i in range(3):
             result.append((value >> (2 - i) * 4) & 0xf)
         return result
+        
+    def string_at(self, pos):
+        try:
+            s = "".join(list(map(chr,self.data[pos:])))
+            return s.encode("string-escape")
+        except:
+            return "(Invalid)"
         
 
 # Commands:

@@ -40,12 +40,14 @@ class cec_write(Event):
     def __str__(self):
         return "cec_write(" + str(self.msg) + ")"
 
-class dev_update(Event):
+class dev_status(Event):
     
     def __init__(self, device, *args, **kwargs):
-        super(dev_update, self).__init__(*args, **kwargs)
+        super(dev_status, self).__init__(*args, **kwargs)
         self.device = device
 
     def __str__(self):
-        return "dev_update(" + str(self.device) + ")"
-    
+        return "dev_status(" + str(self.device) + ")"
+
+class dev_report(Event):
+    pass

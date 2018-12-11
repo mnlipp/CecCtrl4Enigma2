@@ -1,9 +1,32 @@
 var webSocket;
+var switches;
+
+var log = {
+        debug: function(message) {
+            if (console && console.debug) {
+                console.debug(message)
+            }
+        },
+        info: function(message) {
+            if (console && console.info) {
+                console.info(message)
+            }
+        },
+        warn: function(message) {
+            if (console && console.warn) {
+                console.warn(message)
+            }
+        },
+        error: function(message) {
+            if (console && console.error) {
+                console.error(message)
+            }
+        }
+    };
 
 function openSocket() {
     // Ensures only one connection is open at a time
     if (webSocket !== undefined && webSocket.readyState !== WebSocket.CLOSED) {
-        writeResponse("WebSocket is already opened.");
         return;
     }
     // Create a new instance of the websocket
@@ -24,19 +47,20 @@ function openSocket() {
         // For reasons I can't determine, onopen gets called twice
         // and the first time event.data is undefined.
         // Leave a comment if you know the answer.
-        writeResponse("Monitor started.");
         if (event.data === undefined)
             return;
-
-        writeResponse(event.data);
     };
 
     webSocket.onmessage = function(event) {
-        writeResponse(event.data);
+        try {
+            let msg = JSON.parse(event.data);
+            switches.updateDevices(msg);
+        } catch (e) {
+            log.error(e);
+        }
     };
 
     webSocket.onclose = function(event) {
-        writeResponse("Connection closed");
     };
 }
 
@@ -71,7 +95,7 @@ Vue.component("cec-remote-button", {
                     }
             }
             webSocket.send(JSON.stringify(data));
-        }
+        },
     },
     template: '\
         <div class="ctrl-button"> \
@@ -79,15 +103,65 @@ Vue.component("cec-remote-button", {
         </div>',
 });
 
-
 // Start
 
 $(function() {
+    switches = new Vue({
+        el: '#ctrl-switches-container',
+        data: {
+            visible: false,
+            devices: [ ],
+        },
+        computed: {
+        },
+        methods: {
+            updateDevices: function(message) {
+                if ("dev_status" in message) {
+                    let devInfo = message.dev_status;
+                    let found = false;
+                    for (device of this.devices) {
+                        if (device.addr == devInfo.logical_address) {
+                            device.name = devInfo.osd_name;
+                            device.type = devInfo.type;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        this.devices.push({
+                            addr: devInfo.logical_address,
+                            name: devInfo.osd_name,
+                            type: devInfo.type,
+                        })
+                        this.devices.sort(function(a,b) {
+                            return a.addr - b.addr;
+                        })
+                    }
+                }
+            },
+            hideSwitches: function() {
+                switches.visible = false;
+            },
+            allOff: function() {
+                switches.visible = false;
+                data = {
+                        allOff: {}
+                }
+                webSocket.send(JSON.stringify(data));
+            },
+        }
+    });
+    
     var ctrlPanel = new Vue({
         el: '.ctrl-panel',
         data: {
         },
         computed: {
+        },
+        methods: {
+            showSwitches: function() {
+                switches.visible = true;
+            }
         }
     });
     

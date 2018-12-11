@@ -22,8 +22,8 @@ from circuits.core.handlers import handler
 from circuits.core.components import Component
 from circuits_bricks.app.logger import log
 import logging
-from .cec import deviceType
-from .events import dev_update
+from .cec import deviceType, CecMessage
+from .events import dev_status, cec_write
 
 class Device(object):
     
@@ -31,7 +31,8 @@ class Device(object):
         self._manager = manager
         self._logical_address = logical_address
         self._physical_address = None
-        self._osd_name = "(unknown)"
+        self._osd_name = None
+        self._osd_name_requested = False
         self._type = None
 
     @property
@@ -56,7 +57,7 @@ class Device(object):
 
     @property
     def osd_name(self):
-        return self._osd_name
+        return self._osd_name if self._osd_name else "(Unknown)"
 
     @osd_name.setter
     def osd_name(self, value):
@@ -76,7 +77,7 @@ class Device(object):
 
     def _update(self):
         if not self._physical_address is None:
-            self._manager.fire(dev_update(self))
+            self._manager.fire(dev_status(self))
 
     def __str__(self):
         return "Device \"%s\" (%s) at (%d)[%s]" \
@@ -96,16 +97,38 @@ class DeviceManager(Component):
     @handler("cec_read", channel="cec")
     def _on_cec_read(self, event):
         msg = event.msg
-        if not msg.srcAddr in self._devices and msg.srcAddr != 15:
+        if msg.srcAddr == 15:
+            # Source is broadcast, nothing to gain here
+            return
+        if not msg.srcAddr in self._devices:
+            # New device!
             self._devices[msg.srcAddr] = Device(self, msg.srcAddr)
             self.fire(log(logging.INFO,
                           "New: %s" % (self._devices[msg.srcAddr])), "logger")
-        if msg.srcAddr != 15:
-            device = self._devices[msg.srcAddr]
-            if msg.cmd == 0x84: # Report Physical Address
-                device.physical_address = msg.physical_at(0);
-                device.type = msg.data[2]
+        device = self._devices[msg.srcAddr]
+        if msg.cmd == 0x84: # Report Physical Address
+            device.physical_address = msg.physical_at(0);
+            device.type = msg.data[2]
+            self.fire(log(logging.INFO, "Updated: %s" % (device)), "logger")
+        if msg.cmd == 0x47: # Set OSD Name
+            try:
+                device.osd_name = msg.string_at(0)
                 self.fire(log(logging.INFO, "Updated: %s" % (device)), "logger")
-            if msg.cmd == 0x47: # Give OSD Name
-                device.osd_name = "".join(list(map(chr,msg.data[0:])))
-                self.fire(log(logging.INFO, "Updated: %s" % (device)), "logger")
+            except:
+                # We sometimes get faulty messages...
+                pass
+        # Request missing information, one by one
+        if device.physical_address is None:
+            self.fire(cec_write(CecMessage(16, msg.srcAddr, 0x83, [])), "cec")
+            return;
+        if not device._osd_name_requested:
+            # osd name support is optional, so just try once and see what we get
+            self.fire(cec_write(CecMessage(16, msg.srcAddr, 0x46, [])), "cec")
+            device._osd_name_requested = True
+            return;
+             
+
+    @handler("dev_report")
+    def _on_dev_report(self, event):
+        for k,v in self._devices.items():
+            self.fire(dev_status(v))

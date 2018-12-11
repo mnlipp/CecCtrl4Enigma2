@@ -17,36 +17,47 @@
 
 <body>
 
+  <div id="ctrl-switches-container" v-if="visible">
+    <div class="ctrl-switches-panel">
+      <div class="ctrl-switches-close"
+        v-on:click="hideSwitches"><i class="fas fa-times"></i>
+      </div>
+      <div v-for="device in devices" class="ctrl-switches-button">
+        <button >{{ device.name }}</button>
+      </div>
+      <div class="ctrl-switches-button ctrl-switches-off">
+        <button v-on:click="allOff"><i class="fas fa-power-off"></i></button>
+      </div>
+    </div>
+  </div>
+  
   <div class="ctrl-panel">
   
     <div class="ctrl-button-row">
-      <cec-remote-button v-bind:label="'<i class=\x27fas fa-list\x27></i>'" 
-        v-bind:code="1"></cec-remote-button>
       <div class="ctrl-button">
-        <button>Test</button>
+        <button v-on:click="showSwitches"><i class="fas fa-list"></i></button>
       </div>
+      <cec-remote-button v-bind:label="'Help'" 
+        v-bind:code="0x36"></cec-remote-button>
       <cec-remote-button v-bind:label="'<i class=\x27fas fa-chevron-up\x27></i>'" 
         v-bind:code="1"></cec-remote-button>
-      <div class="ctrl-button">
-        <button>Test</button>
-      </div>
-      <div class="ctrl-button">
-        <button>Test</button>
-      </div>
+      <cec-remote-button v-bind:label="'<i class=\x27fas fa-play\x27></i>'" 
+        v-bind:code="0x44"></cec-remote-button>
+      <cec-remote-button v-bind:label="'<i class=\x27fas fa-pause\x27></i>'" 
+        v-bind:code="0x46"></cec-remote-button>
     </div>
  
     <div class="ctrl-button-row">
-      <cec-remote-button v-bind:label="'Help'" 
-        v-bind:code="0x36"></cec-remote-button>
+      <cec-remote-button v-bind:label="'<div class=\x27label-circle-red\x27></div>'" 
+        v-bind:code="0x47"></cec-remote-button>
       <cec-remote-button v-bind:label="'<i class=\x27fas fa-chevron-left\x27></i>'" 
         v-bind:code="3"></cec-remote-button>
       <cec-remote-button v-bind:label="'OK'" 
         v-bind:code="0"></cec-remote-button>
       <cec-remote-button v-bind:label="'<i class=\x27fas fa-chevron-right\x27></i>'" 
         v-bind:code="4"></cec-remote-button>
-      <div class="ctrl-button">
-        <button>Test</button>
-      </div>
+      <cec-remote-button v-bind:label="'<i class=\x27fas fa-stop\x27></i>'" 
+        v-bind:code="0x45"></cec-remote-button>
     </div>
  
     <div class="ctrl-button-row">

@@ -21,7 +21,6 @@
 from .utils.misc import TemplateController
 from circuits.core.handlers import handler
 from circuits.web.websockets.dispatcher import WebSocketsDispatcher
-from circuits.io.events import write
 import os
 import json
 import logging
@@ -29,8 +28,9 @@ from posixpath import dirname
 from circuits.core.components import Component
 from circuits_bricks.app.logger import log
 from .cec import cecCommands, CecMessage
-from .events import cec_write
+from .events import cec_write, dev_report
 from datetime import datetime
+from circuits.io.events import write
 
 class RemotePage(TemplateController):
 
@@ -61,6 +61,7 @@ class RemoteControl(Component):
 
     def connect(self, sock, *args):
         self._connected.append(sock)
+        self.fire(dev_report(), "dev-mgr")
 
     def close(self, sock):
         self._connected.remove(sock)
@@ -70,6 +71,9 @@ class RemoteControl(Component):
             cmd = json.loads(data)
             if "key" in cmd:
                 self._key_cmd(cmd["key"])
+            if "allOff" in cmd:
+                # Broadcast <Standby>
+                self.fire(cec_write(CecMessage(16, 15, 0x36, [])), "cec")
         except:
             pass
 
@@ -77,3 +81,17 @@ class RemoteControl(Component):
         code = args["code"]
         self.fire(cec_write(CecMessage(16, 3, 0x44, [code])), "cec")
         self.fire(cec_write(CecMessage(16, 3, 0x45, [])), "cec")
+
+    @handler("dev_status", channel="dev-mgr")
+    def _on_dev_status(self, event):
+        device = event.device;
+        data = json.dumps({ 
+            "dev_status": {
+                "logical_address": device.logical_address,
+                "physical_address": device.physical_address,
+                "osd_name": device.osd_name,
+                "type": device.type,
+                }
+        })
+        for sock in self._connected:
+            self.fire(write(sock, data))
