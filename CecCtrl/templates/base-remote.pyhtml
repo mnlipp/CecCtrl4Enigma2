@@ -23,7 +23,9 @@
         v-on:click="hideSwitches"><i class="fas fa-times"></i>
       </div>
       <div v-for="device in devices" class="ctrl-switches-button">
-        <button >{{ device.name }}</button>
+        <cec-remote-device v-bind:addr="device.addr" v-bind:name="device.name"
+          v-bind:type="device.type">
+        </cec-remote-device>
       </div>
       <div class="ctrl-switches-button ctrl-switches-off">
         <button v-on:click="allOff"><i class="fas fa-power-off"></i></button>

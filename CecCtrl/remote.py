@@ -28,7 +28,7 @@ from posixpath import dirname
 from circuits.core.components import Component
 from circuits_bricks.app.logger import log
 from .cec import cecCommands, CecMessage
-from .events import cec_write, dev_report
+from .events import cec_write, dev_report, dev_make_source, dev_send_key
 from datetime import datetime
 from circuits.io.events import write
 
@@ -71,16 +71,17 @@ class RemoteControl(Component):
             cmd = json.loads(data)
             if "key" in cmd:
                 self._key_cmd(cmd["key"])
-            if "allOff" in cmd:
+            elif "allOff" in cmd:
                 # Broadcast <Standby>
                 self.fire(cec_write(CecMessage(16, 15, 0x36, [])), "cec")
+            elif "makeSource" in cmd:
+                self.fire(dev_make_source(cmd["makeSource"]["logical_address"]), "dev-mgr")
         except:
             pass
 
     def _key_cmd(self, args):
         code = args["code"]
-        self.fire(cec_write(CecMessage(16, 3, 0x44, [code])), "cec")
-        self.fire(cec_write(CecMessage(16, 3, 0x45, [])), "cec")
+        self.fire(dev_send_key(code), "dev-mgr")
 
     @handler("dev_status", channel="dev-mgr")
     def _on_dev_status(self, event):

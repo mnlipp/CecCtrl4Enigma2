@@ -97,6 +97,11 @@ class CecMessage(object):
             result.append((value >> (2 - i) * 4) & 0xf)
         return result
         
+    def append_physical(self, addr):
+        self.data.append(addr[0] << 4 | addr[1])
+        self.data.append(addr[2] << 4 | addr[3])
+        return self
+        
     def string_at(self, pos):
         try:
             s = "".join(list(map(chr,self.data[pos:])))

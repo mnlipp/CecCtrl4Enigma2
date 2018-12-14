@@ -68,7 +68,7 @@ function closeSocket() {
     webSocket.close();
 }
 
-// Components
+// Components for remote
 
 Vue.component("cec-remote-button", {
     props: {
@@ -100,6 +100,44 @@ Vue.component("cec-remote-button", {
     template: '\
         <div class="ctrl-button"> \
             <button v-html="label" v-on:click="sendKey"></button> \
+        </div>',
+});
+
+// Components for switch panel
+
+Vue.component("cec-remote-device", {
+    props: {
+        addr: {
+            type: Number,
+            required: true,
+        },
+        name: {
+            type: String,
+            required: true,
+        },
+        type: {
+            type: Number,
+            required: true,
+        },
+    },
+    data: function() {
+        return {
+        };
+    },
+    methods: {
+        makeSource: function() {
+            data = {
+                    makeSource : {
+                        logical_address: this.addr,
+                    }
+            }
+            webSocket.send(JSON.stringify(data));
+            this.$parent.hideSwitches()
+        }
+    },
+    template: '\
+        <div class="cec-device-control"> \
+            <button v-on:click="makeSource">{{ name }}</button> \
         </div>',
 });
 

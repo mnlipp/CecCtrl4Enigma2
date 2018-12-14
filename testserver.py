@@ -13,6 +13,7 @@ class DummyAdapter(Component):
     
     def __init__(self, *args, **kwargs):
         super(DummyAdapter, self).__init__(*args, **kwargs)
+        self._active_source = 3
 
     @handler("cec_read", channel="cec")
     def _on_cec_read(self, event):
@@ -23,11 +24,26 @@ class DummyAdapter(Component):
         event.msg.srcAddr = 3
         msg = event.msg
         print "Sent: %s" % (msg)
+        if msg.dstAddr == 3:
+            if msg.cmd == 0x83:
+                self.fire(cec_read(CecMessage(3, 3, 0x84, [0x20, 0, 3])))
+            if msg.cmd == 0x46:
+                self.fire(cec_read(CecMessage(3, 3, 0x47, list(map(ord,"vuultimo")))))
         if msg.dstAddr == 5:
             if msg.cmd == 0x83:
                 self.fire(cec_read(CecMessage(5, 3, 0x84, [0x40, 0, 5])))
             if msg.cmd == 0x46:
-                self.fire(cec_read(CecMessage(5, 3, 0x47, list(map(ord,"Test Server")))))
+                self.fire(cec_read(CecMessage(5, 3, 0x47, list(map(ord,"AV/Receiver")))))
+        if msg.cmd == 0x85:
+            if self._active_source == 3:
+                self.fire(cec_read(CecMessage(3, 15, 0x82, []).append_physical([2,0,0,0])))
+            if self._active_source == 5:
+                self.fire(cec_read(CecMessage(5, 15, 0x82, []).append_physical([4,0,0,0])))
+        if msg.cmd == 0x86:
+            if msg.data == [0x20,0x0]:
+                self.fire(cec_read(CecMessage(3, 15, 0x82, []).append_physical([2,0,0,0])))
+            if msg.data == [0x40,0x0]:
+                self.fire(cec_read(CecMessage(5, 15, 0x82, []).append_physical([4,0,0,0])))
 
 if __name__ == '__main__':
 

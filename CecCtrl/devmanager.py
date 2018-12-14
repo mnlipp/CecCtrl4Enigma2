@@ -24,6 +24,8 @@ from circuits_bricks.app.logger import log
 import logging
 from .cec import deviceType, CecMessage
 from .events import dev_status, cec_write
+from circuits.core.events import Event
+from circuits.core.timers import Timer
 
 class Device(object):
     
@@ -86,6 +88,9 @@ class Device(object):
                self.logical_address,
                ":".join(map(str,self.physical_address)) if self.physical_address else "?")
 
+class check_next_device(Event):
+    pass
+
 class DeviceManager(Component):
 
     channel = "dev-mgr"
@@ -93,6 +98,27 @@ class DeviceManager(Component):
     def __init__(self, *args, **kwargs):
         super(DeviceManager, self).__init__(*args, **kwargs)
         self._devices = {}
+        self._active_source = -1
+        self._next_to_check = 0;
+
+    @handler("started", channel="*")
+    def _on_started(self, event, *args):
+        # Request active source
+        self.fire(cec_write(CecMessage(16, 15, 0x85, [])), "cec")
+        self._poll_timer = Timer(0.2, check_next_device(), "dev-mgr").register(self)
+
+    @handler("check_next_device")
+    def _on_check_next_device(self, event):
+        while self._next_to_check in [12, 13] \
+            or self._next_to_check in self._devices:
+            self._next_to_check += 1
+        if self._next_to_check < 15:
+            # Give physical address
+            self.fire(cec_write(CecMessage(16, self._next_to_check, 0x83, [])),
+                      "cec")
+            self._next_to_check += 1;
+        if self._next_to_check < 15:
+            self._poll_timer = Timer(0.2, check_next_device(), "dev-mgr").register(self)
 
     @handler("cec_read", channel="cec")
     def _on_cec_read(self, event):
@@ -117,6 +143,8 @@ class DeviceManager(Component):
             except:
                 # We sometimes get faulty messages...
                 pass
+        if msg.cmd == 0x82: # Active source
+            self._active_source = msg.srcAddr
         # Request missing information, one by one
         if device.physical_address is None:
             self.fire(cec_write(CecMessage(16, msg.srcAddr, 0x83, [])), "cec")
@@ -126,9 +154,37 @@ class DeviceManager(Component):
             self.fire(cec_write(CecMessage(16, msg.srcAddr, 0x46, [])), "cec")
             device._osd_name_requested = True
             return;
-             
 
     @handler("dev_report")
     def _on_dev_report(self, event):
-        for k,v in self._devices.items():
+        for _,v in self._devices.items():
             self.fire(dev_status(v))
+
+    @handler("dev_send_key")
+    def _on_dev_send_key(self, event):
+        if self._active_source >= 0: 
+            self.fire(cec_write(CecMessage(16, self._active_source, 0x44, [event.code])), "cec")
+            self.fire(cec_write(CecMessage(16, self._active_source, 0x45, [])), "cec")
+            
+            
+    @handler("dev_make_source")
+    def _on_dev_make_source(self, event):
+        if not event.logical_address in self._devices:
+            self.fire(log(logging.DEBUG, "Cannot make source: unknown device %d"
+                          % (event.logical_address)), "logger")
+            return
+        device = self._devices[event.logical_address]
+        if device.physical_address is None:
+            self.fire(log(logging.DEBUG, 
+                          "Cannot make source: missing physical address for %d"
+                          % (event.logical_address)), "logger")
+            return
+        # Special handling for switch to TV
+        if event.logical_address == 0:
+            if self._active_source > 0:
+                self.fire(cec_write(CecMessage(16, 0, 0x9d, [])
+                                    .append_physical(device.physical_address)), "cec")
+            return
+        # Set Stream Path
+        self.fire(cec_write(CecMessage(16, 15, 0x86, [])
+                            .append_physical(device.physical_address)), "cec")
