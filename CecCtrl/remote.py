@@ -28,8 +28,8 @@ from posixpath import dirname
 from circuits.core.components import Component
 from circuits_bricks.app.logger import log
 from .cec import cecCommands, CecMessage
-from .events import cec_write, dev_report, dev_make_source, dev_send_key
-from datetime import datetime
+from .cecadapter import cec_write
+from devmanager import dev_report, dev_make_source, dev_send_key
 from circuits.io.events import write
 
 class RemotePage(TemplateController):
@@ -38,7 +38,7 @@ class RemotePage(TemplateController):
 
     def __init__(self, *args, **kwargs):
         super(RemotePage, self).__init__(
-            [os.path.join(dirname(__file__), "templates")], *args, **kwargs)
+            [os.path.join(dirname(__file__), "templates", "remotes")], *args, **kwargs)
         WebSocketsDispatcher(channel="ctrl-ui",
                              path="/remote/socket", 
                              wschannel="remote-control").register(self)
@@ -49,7 +49,18 @@ class RemotePage(TemplateController):
         if request.path.endswith("/socket"):
             # Let WebSocket dispatch handle this...
             return
-        return self.serve_tenjin(request, response, "base-remote.pyhtml", {})
+        return self.serve_tenjin(request, response, "remote.pyhtml", {})
+    
+    @handler("dev_source_changed", channel="dev-mgr")
+    def _on_dev_source_changed(self, event):
+        root = os.path.join(dirname(__file__), "templates", "remotes")
+        device = event.device
+        paths = []
+        if not device.vendor_id is None:
+            paths.append(os.path.join(root, str(device.type), "%06X" % (device.vendor_id)))
+        paths.append(os.path.join(root, str(device.type)))
+        paths.append(root)
+        self.update_engine(paths)
   
 class RemoteControl(Component):
 
@@ -93,6 +104,14 @@ class RemoteControl(Component):
                 "osd_name": device.osd_name,
                 "type": device.type,
                 }
+        })
+        for sock in self._connected:
+            self.fire(write(sock, data))
+
+    @handler("dev_source_changed", channel="dev-mgr", priority=-1)
+    def _on_dev_source_changed(self, event):
+        data = json.dumps({ 
+            "reload": {}
         })
         for sock in self._connected:
             self.fire(write(sock, data))

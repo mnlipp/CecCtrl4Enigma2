@@ -23,11 +23,14 @@ from circuits.core.components import Component
 from circuits_bricks.app.logger import log
 import logging
 from .cec import deviceType, CecMessage
-from .events import dev_status, cec_write
+from .cecadapter import cec_write
 from circuits.core.events import Event
 from circuits.core.timers import Timer
 
 class Device(object):
+    """
+    Represents a device with all information collected from CEC messages.
+    """
     
     def __init__(self, manager, logical_address):
         self._manager = manager
@@ -35,6 +38,8 @@ class Device(object):
         self._physical_address = None
         self._osd_name = None
         self._osd_name_requested = False
+        self._vendor_id = None
+        self._vendor_id_requested = False
         self._type = None
 
     @property
@@ -77,6 +82,16 @@ class Device(object):
             self._type = value
             self._update()
 
+    @property
+    def vendor_id(self):
+        return self._vendor_id
+    
+    @vendor_id.setter
+    def vendor_id(self, value):
+        if self._vendor_id != value:
+            self._vendor_id = value
+            self._update()
+
     def _update(self):
         if not self._physical_address is None:
             self._manager.fire(dev_status(self))
@@ -92,6 +107,9 @@ class check_next_device(Event):
     pass
 
 class DeviceManager(Component):
+    """
+    A directory of all known devices.
+    """
 
     channel = "dev-mgr"
 
@@ -99,7 +117,8 @@ class DeviceManager(Component):
         super(DeviceManager, self).__init__(*args, **kwargs)
         self._devices = {}
         self._active_source = -1
-        self._next_to_check = 0;
+        self._active_change_pending = False
+        self._next_to_check = 0
 
     @handler("started", channel="*")
     def _on_started(self, event, *args):
@@ -132,19 +151,23 @@ class DeviceManager(Component):
             self.fire(log(logging.INFO,
                           "New: %s" % (self._devices[msg.srcAddr])), "logger")
         device = self._devices[msg.srcAddr]
-        if msg.cmd == 0x84: # Report Physical Address
-            device.physical_address = msg.physical_at(0);
-            device.type = msg.data[2]
-            self.fire(log(logging.INFO, "Updated: %s" % (device)), "logger")
-        if msg.cmd == 0x47: # Set OSD Name
-            try:
+        try:
+            if msg.cmd == 0x84: # Report Physical Address
+                device.physical_address = msg.physical_at(0);
+                device.type = msg.data[2]
+                self.fire(log(logging.INFO, "Updated: %s" % (device)), "logger")
+            if msg.cmd == 0x47: # Set OSD Name
                 device.osd_name = msg.string_at(0)
                 self.fire(log(logging.INFO, "Updated: %s" % (device)), "logger")
-            except:
-                # We sometimes get faulty messages...
-                pass
-        if msg.cmd == 0x82: # Active source
-            self._active_source = msg.srcAddr
+            if msg.cmd == 0x87: # Device Vendor ID
+                device.vendor_id = msg.data[0] << 16 | msg.data[1] << 8 | msg.data[2]
+            if msg.cmd == 0x82: # Active source
+                if self._active_source != msg.srcAddr:
+                    self._active_source = msg.srcAddr
+                    self._active_change_pending = True
+        except:
+            # We sometimes get faulty messages...
+            pass
         # Request missing information, one by one
         if device.physical_address is None:
             self.fire(cec_write(CecMessage(16, msg.srcAddr, 0x83, [])), "cec")
@@ -154,6 +177,16 @@ class DeviceManager(Component):
             self.fire(cec_write(CecMessage(16, msg.srcAddr, 0x46, [])), "cec")
             device._osd_name_requested = True
             return;
+        if not device._vendor_id_requested:
+            # vendor id support is optional, so just try once and see what we get
+            self.fire(cec_write(CecMessage(16, msg.srcAddr, 0x8c, [])), "cec")
+            device._vendor_id_requested = True
+            return;
+        # Pending change of active source?
+        if self._active_change_pending and device.physical_address:
+            # We have collected everything required (and most of the optional infos)
+            self.fire(dev_source_changed(device))
+            self._active_change_pending = False
 
     @handler("dev_report")
     def _on_dev_report(self, event):
@@ -183,8 +216,55 @@ class DeviceManager(Component):
         if event.logical_address == 0:
             if self._active_source > 0:
                 self.fire(cec_write(CecMessage(16, 0, 0x9d, [])
-                                    .append_physical(device.physical_address)), "cec")
+                                    .append_physical(self._devices[self._active_source]
+                                                     .physical_address)), "cec")
             return
         # Set Stream Path
         self.fire(cec_write(CecMessage(16, 15, 0x86, [])
                             .append_physical(device.physical_address)), "cec")
+
+class dev_status(Event):
+    """
+    Reports a device status after a change or after explicit request. 
+    """
+    
+    def __init__(self, device, *args, **kwargs):
+        super(dev_status, self).__init__(*args, **kwargs)
+        self.device = device
+
+    def __str__(self):
+        return "dev_status(" + str(self.device) + ")"
+
+class dev_report(Event):
+    """
+    Trigger the reporting of the status for each known device.
+    """
+    pass
+
+class dev_make_source(Event):
+    """
+    Try to make the specified device the active device.
+    """ 
+
+    def __init__(self, logical_address, *args, **kwargs):
+        super(dev_make_source, self).__init__(*args, **kwargs)
+        self.logical_address = logical_address
+
+class dev_source_changed(Event):
+    """
+    Reports a change of the active device.
+    """
+    
+    def __init__(self, device, *args, **kwargs):
+        super(dev_source_changed, self).__init__(*args, **kwargs)
+        self.device = device
+
+class dev_send_key(Event): 
+    """
+    Send the given code to the active device.
+    """
+    
+    def __init__(self, code, *args, **kwargs):
+        super(dev_send_key, self).__init__(*args, **kwargs)
+        self.code = code
+

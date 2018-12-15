@@ -32,6 +32,9 @@ class TemplateController(BaseController):
     def __init__(self, templates_dir, *args, **kwargs):
         super(TemplateController, self).__init__(*args, **kwargs)
         self._engine = tenjin.Engine(path=templates_dir)
+        
+    def update_engine(self, templates_dir):
+        self._engine = tenjin.Engine(path=templates_dir)
 
     def serve_tenjin(self, request, response, path, context, 
                      content_type="text/html", disposition=None, name=None,

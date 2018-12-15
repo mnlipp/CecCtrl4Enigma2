@@ -54,6 +54,10 @@ function openSocket() {
     webSocket.onmessage = function(event) {
         try {
             let msg = JSON.parse(event.data);
+            if ("reload" in msg) {
+                location.reload();
+                return;
+            }
             switches.updateDevices(msg);
         } catch (e) {
             log.error(e);
@@ -193,13 +197,20 @@ $(function() {
     var ctrlPanel = new Vue({
         el: '.ctrl-panel',
         data: {
+            page: 1,
         },
         computed: {
         },
         methods: {
             showSwitches: function() {
                 switches.visible = true;
-            }
+            },
+            nextPage: function() {
+                this.page += 1;
+            },
+            prevPage: function() {
+                this.page -= 1;
+            },
         }
     });
     

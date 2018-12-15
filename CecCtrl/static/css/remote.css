@@ -58,6 +58,11 @@ html, body {
 .ctrl-panel {
 	height: calc(100% - 0.6vw);
 	padding: 0.3vw;
+}
+
+.ctrl-page {
+	height: 100%;
+	width: 100%;
 	
 	display: flex;
 	flex-direction: column;

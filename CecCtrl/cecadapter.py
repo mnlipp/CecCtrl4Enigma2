@@ -22,6 +22,9 @@ from datetime import datetime
 from circuits.core.events import Event
 
 class cec_read(Event):
+    """
+    CEC data has been received.
+    """
     
     def __init__(self, msg, *args, **kwargs):
         super(cec_read, self).__init__(*args, **kwargs)
@@ -32,6 +35,9 @@ class cec_read(Event):
         return "cec_read(" + str(self.timestamp) + ", " + str(self.msg) + ")"
     
 class cec_write(Event):
+    """
+    Write CEC data.
+    """
     
     def __init__(self, msg, *args, **kwargs):
         super(cec_write, self).__init__(*args, **kwargs)
@@ -39,28 +45,4 @@ class cec_write(Event):
 
     def __str__(self):
         return "cec_write(" + str(self.msg) + ")"
-
-class dev_status(Event):
-    
-    def __init__(self, device, *args, **kwargs):
-        super(dev_status, self).__init__(*args, **kwargs)
-        self.device = device
-
-    def __str__(self):
-        return "dev_status(" + str(self.device) + ")"
-
-class dev_report(Event):
-    pass
-
-class dev_make_source(Event): 
-    
-    def __init__(self, logical_address, *args, **kwargs):
-        super(dev_make_source, self).__init__(*args, **kwargs)
-        self.logical_address = logical_address
-
-class dev_send_key(Event): 
-    
-    def __init__(self, code, *args, **kwargs):
-        super(dev_send_key, self).__init__(*args, **kwargs)
-        self.code = code
 
