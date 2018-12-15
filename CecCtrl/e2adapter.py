@@ -21,7 +21,7 @@
 from circuits.core.components import Component
 from enigma import eHdmiCEC, eActionMap
 from .ebrigde import blockingCallOnMainThread, callOnMainThread
-from .events import cec_read
+from .cecadapter import cec_read
 import new
 from .cec import CecMessage
 from circuits.core.handlers import handler
@@ -29,26 +29,27 @@ import sys
 import traceback
 import ctypes
 
-class eCECMessageStandIn:
+class eCECMessageStandIn(CecMessage):
     """
     Mimics the class eCecMessage, which isn't published to python for some
     unknown reason.
     """
     def __init__(self, address, command, data):
-        self._address = address
-        self._command = command
-        self._data = data
+        super(eCECMessageStandIn, self).__init__(0, address, command, data)
         
     def getAddress(self):
-        return self._address
+        return self.dstAddr
 
     def getCommand(self):
-        return self._command
+        return self.cmd
 
     def getData(self, data, length):
-        if length > len(self._data):
-            length = len(self._data)
-        ctypes.memmove(ctypes.c_char_p(data), self._data, length)
+        if length > len(self.data):
+            length = len(self.data)
+        if length > 0:
+            dataStr = "".join(map(chr, self.data))
+            ctypes.memmove(ctypes.c_char_p(data), dataStr, length)
+        return length
 
 
 class E2Adapter(Component):
@@ -225,8 +226,7 @@ class E2Adapter(Component):
             self._forward_key(msg);
         
         # Now forward to "normal" handlers
-        dataStr = "".join(map(chr, msg.data))
-        handlerMsg = eCECMessageStandIn(msg.dstAddr, msg.cmd, dataStr)
+        handlerMsg = eCECMessageStandIn(msg.dstAddr, msg.cmd, msg.data)
         for hdlr in eHdmiCEC.getInstance().messageReceived.get():
             if hdlr != self._on_message_received:
                 try:
