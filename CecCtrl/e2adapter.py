@@ -207,9 +207,9 @@ class E2Adapter(Component):
         # enigma (or broadcasts) must be "received"
         if event.msg.dstAddr == 15 \
             or event.msg.dstAddr != eHdmiCEC.getInstance().getLogicalAddress():
-            dataStr = "".join(map(chr, event.msg.data))
             def send():
                 self._ignore_next_sent = True
+                dataStr = "".join(map(chr, event.msg.data))
                 eHdmiCEC.getInstance().sendMessage(
                     event.msg.dstAddr, event.msg.cmd, dataStr, len(dataStr))
             callOnMainThread(send)
@@ -232,7 +232,7 @@ class E2Adapter(Component):
                 try:
                     hdlr(handlerMsg)
                 except:
-                    print "Problem while forwarding message:", sys.exc_info()[0]
+                    print "[CecCtrl] Problem while forwarding message:", sys.exc_info()[0]
                     traceback.print_exc(file=sys.stdout)
 
     def _forward_key(self, msg):
