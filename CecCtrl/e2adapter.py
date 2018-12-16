@@ -19,7 +19,8 @@
 .. moduleauthor:: mnl
 """
 from circuits.core.components import Component
-from enigma import eHdmiCEC, eActionMap
+from enigma import eHdmiCEC, eActionMap, eTimer
+from Components.config import config
 from .ebrigde import blockingCallOnMainThread, callOnMainThread
 from .cecadapter import cec_read
 import new
@@ -67,7 +68,6 @@ class E2Adapter(Component):
     
     def __init__(self, *args, **kwargs):
         super(E2Adapter, self).__init__(*args, **kwargs)
-        self._ignore_next_sent = False
         self._last_cec_key = None
         self._key_map = {
             0x00: 352, # "Select" -> "KEY_OK"
@@ -166,6 +166,9 @@ class E2Adapter(Component):
         }
         def setup():
             self.eam = eActionMap.getInstance()            
+            self._queue = []
+            self._queue_timer = eTimer()
+            self._queue_timer.timeout.get().append(self._send_from_queue)
             try:
                 eHdmiCEC.getInstance().messageReceived.get().index(self._on_message_received)
                 print "[CecCtrl] Message listener already registered."
@@ -175,17 +178,11 @@ class E2Adapter(Component):
                 eHdmiCEC.getInstance().messageReceived.get().insert(0, self._on_message_received)
                 print "[CecCtrl] Handler for messageReceived registered."
                 # Also monitor sent messages
-                origSend = getattr(eHdmiCEC, "sendMessage")
-                if origSend:
+                self._original_send = getattr(eHdmiCEC, "sendMessage")
+                if self._original_send:
                     def wrapped(obj, addr, cmd, data, length):
-                        if self._ignore_next_sent:
-                            self._ignore_next_sent = False
-                        else:
-                            self.fire(
-                                cec_read(
-                                    CecMessage(obj.getLogicalAddress(), 
-                                               addr, cmd, list(map(ord,data[0:length])))))
-                        return origSend(obj, addr, cmd, data, length)
+                        self._send_slotted(obj, addr, cmd, data, length, True)
+                        return
                     setattr(eHdmiCEC, "sendMessage", 
                             new.instancemethod(wrapped, None, eHdmiCEC))
                     print "[CecCtrl] Wrapper for sendMessage installed."
@@ -208,10 +205,13 @@ class E2Adapter(Component):
         if event.msg.dstAddr == 15 \
             or event.msg.dstAddr != eHdmiCEC.getInstance().getLogicalAddress():
             def send():
-                self._ignore_next_sent = True
                 dataStr = "".join(map(chr, event.msg.data))
-                eHdmiCEC.getInstance().sendMessage(
-                    event.msg.dstAddr, event.msg.cmd, dataStr, len(dataStr))
+                if self._original_send:
+                    self._send_slotted(eHdmiCEC.getInstance(),
+                        event.msg.dstAddr, event.msg.cmd, dataStr, len(dataStr), False)
+                else:
+                    eHdmiCEC.getInstance().sendMessage(
+                        event.msg.dstAddr, event.msg.cmd, dataStr, len(dataStr))
             callOnMainThread(send)
         if event.msg.dstAddr == 15 \
             or event.msg.dstAddr == eHdmiCEC.getInstance().getLogicalAddress():
@@ -267,4 +267,26 @@ class E2Adapter(Component):
         if msg.cmd == 0x45:
             # Release the key
             self.eam.keyPressed(TYPE_ADVANCED, self._key_map[cecKey], FLAG_BREAK)        
+
+    def _send_slotted(self, obj, addr, cmd, data, length, also_receive):
+        # Called from main loop
+        self._queue.append((obj, addr, cmd, data, length, also_receive))
+        if config.hdmicec.minimum_send_interval.value == "0" \
+                or not self._queue_timer.isActive():
+            self._send_from_queue()
+        
+    def _send_from_queue(self):        
+        if len(self._queue) == 0:
+            # Nothing added since last removal
+            return
+        (obj, addr, cmd, data, length, also_receive) = self._queue.pop(0)
+        self._original_send(obj, addr, cmd, data, length)
+        if also_receive:
+            self.fire(
+                cec_read(
+                    CecMessage(obj.getLogicalAddress(), 
+                               addr, cmd, list(map(ord,data[0:length])))))
+        # Start timer even if queue is empty to ensure pause
+        if config.hdmicec.minimum_send_interval.value != "0":
+            self._queue_timer.start(int(config.hdmicec.minimum_send_interval.value), True)
 
