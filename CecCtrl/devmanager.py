@@ -103,7 +103,7 @@ class Device(object):
                self.logical_address,
                ":".join(map(str,self.physical_address)) if self.physical_address else "?")
 
-class check_next_device(Event):
+class poll_next_info(Event):
     pass
 
 class DeviceManager(Component):
@@ -119,25 +119,53 @@ class DeviceManager(Component):
         self._active_source = -1
         self._active_change_pending = False
         self._next_to_check = 0
+        self._poll_timer = None
+        self._poll_complete = False
 
     @handler("started", channel="*")
     def _on_started(self, event, *args):
         # Request active source
         self.fire(cec_write(CecMessage(16, 15, 0x85, [])), "cec")
-        self._poll_timer = Timer(0.2, check_next_device(), "dev-mgr").register(self)
+        self._poll_timer = Timer(15, poll_next_info(), "dev-mgr").register(self)
 
-    @handler("check_next_device")
-    def _on_check_next_device(self, event):
-        while self._next_to_check in [12, 13] \
-            or self._next_to_check in self._devices:
+    @handler("poll_next_info")
+    def _on_poll_next_info(self, event):
+        self._poll_timer = None
+        self._poll_complete = False
+        # Check for missing infos of knwon devices
+        if self._request_missing():
+            self._poll_timer = Timer(2, poll_next_info(), "dev-mgr").register(self)
+            return
+        # Check for devices
+        while self._next_to_check < 15 and (self._next_to_check in [12, 13]
+                                            or self._next_to_check in self._devices):
             self._next_to_check += 1
         if self._next_to_check < 15:
             # Give physical address
             self.fire(cec_write(CecMessage(16, self._next_to_check, 0x83, [])),
                       "cec")
             self._next_to_check += 1;
-        if self._next_to_check < 15:
-            self._poll_timer = Timer(0.2, check_next_device(), "dev-mgr").register(self)
+            self._poll_timer = Timer(2, poll_next_info(), "dev-mgr").register(self)
+            return;
+        self._poll_complete = True
+
+    def _request_missing(self):
+        for _, device in self._devices.items():
+            # Request missing information, one by one
+            if device.physical_address is None:
+                self.fire(cec_write(CecMessage(16, device.logical_address, 0x83, [])), "cec")
+                return True;
+            if not device._osd_name_requested:
+                # osd name support is optional, so just try once and see what we get
+                self.fire(cec_write(CecMessage(16, device.logical_address, 0x46, [])), "cec")
+                device._osd_name_requested = True
+                return True;
+            if not device._vendor_id_requested:
+                # vendor id support is optional, so just try once and see what we get
+                self.fire(cec_write(CecMessage(16, device.logical_address, 0x8c, [])), "cec")
+                device._vendor_id_requested = True
+                return True;
+        return False
 
     @handler("cec_read", channel="cec")
     def _on_cec_read(self, event):
@@ -150,6 +178,8 @@ class DeviceManager(Component):
             self._devices[msg.srcAddr] = Device(self, msg.srcAddr)
             self.fire(log(logging.INFO,
                           "New: %s" % (self._devices[msg.srcAddr])), "logger")
+            if self._poll_timer is None and self._request_missing():
+                self._poll_timer = Timer(2, poll_next_info(), "dev-mgr").register(self)
         device = self._devices[msg.srcAddr]
         try:
             if msg.cmd == 0x84: # Report Physical Address
@@ -168,20 +198,8 @@ class DeviceManager(Component):
         except:
             # We sometimes get faulty messages...
             pass
-        # Request missing information, one by one
-        if device.physical_address is None:
-            self.fire(cec_write(CecMessage(16, msg.srcAddr, 0x83, [])), "cec")
-            return;
-        if not device._osd_name_requested:
-            # osd name support is optional, so just try once and see what we get
-            self.fire(cec_write(CecMessage(16, msg.srcAddr, 0x46, [])), "cec")
-            device._osd_name_requested = True
-            return;
-        if not device._vendor_id_requested:
-            # vendor id support is optional, so just try once and see what we get
-            self.fire(cec_write(CecMessage(16, msg.srcAddr, 0x8c, [])), "cec")
-            device._vendor_id_requested = True
-            return;
+        if not self._poll_complete:
+            return
         # Pending change of active source?
         if self._active_change_pending and device.physical_address:
             # We have collected everything required (and most of the optional infos)
