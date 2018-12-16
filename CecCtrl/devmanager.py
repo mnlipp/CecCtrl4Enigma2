@@ -199,7 +199,6 @@ class DeviceManager(Component):
             self.fire(cec_write(CecMessage(16, self._active_source, 0x44, [event.code])), "cec")
             self.fire(cec_write(CecMessage(16, self._active_source, 0x45, [])), "cec")
             
-            
     @handler("dev_make_source")
     def _on_dev_make_source(self, event):
         if not event.logical_address in self._devices:
@@ -212,12 +211,17 @@ class DeviceManager(Component):
                           "Cannot make source: missing physical address for %d"
                           % (event.logical_address)), "logger")
             return
+        if device.type != 5:
+            # Make sure that we see something, send "Image View On"
+            self.fire(cec_write(CecMessage(16, 0, 0x04, [])), "cec")
         # Special handling for switch to TV
         if event.logical_address == 0:
             if self._active_source > 0:
                 self.fire(cec_write(CecMessage(16, 0, 0x9d, [])
                                     .append_physical(self._devices[self._active_source]
                                                      .physical_address)), "cec")
+            if self._devices[0]:
+                self.fire(dev_source_changed(self._devices[0]))
             return
         # Set Stream Path
         self.fire(cec_write(CecMessage(16, 15, 0x86, [])
