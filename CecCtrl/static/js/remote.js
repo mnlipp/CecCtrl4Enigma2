@@ -1,5 +1,6 @@
 var webSocket;
 var switches;
+var settings;
 
 var log = {
         debug: function(message) {
@@ -59,6 +60,7 @@ function openSocket() {
                 return;
             }
             switches.updateDevices(msg);
+            settings.updateSettings(msg);
         } catch (e) {
             log.error(e);
         }
@@ -146,9 +148,51 @@ Vue.component("cec-remote-device", {
     },
     template: '\
         <div class="cec-device-control"> \
-            <button v-on:click="makeSource"> \
-                <i v-if="isActive" class=\x27fas fa-hand-point-right\x27></i> \
-                {{ name }}</button> \
+            <button v-on:click="makeSource"> {{ name }} \
+                <i v-if="isActive" class=\x27fas fa-hand-point-up\x27></i> \
+            </button> \
+        </div>',
+});
+
+// Components for settings panel
+
+Vue.component("cec-setting-bool", {
+    props: {
+        description: {
+            type: String,
+            required: true,
+        },
+        section: {
+            type: String,
+            required: true,
+        },
+        option: {
+            type: String,
+            required: true,
+        },
+    },
+    data: function() {
+        return {
+        };
+    },
+    computed: {
+        value: function() {
+            return this.$parent.settings[this.section][this.option] == "True";
+        },
+    },
+    methods: {
+        toggle: function() {
+            this.$parent.sendSetting(this.section, this.option,
+                    !this.value);
+        },
+    },
+    template: '\
+        <div class="cec-setting-bool ctrl-settings-item"> \
+            <div>{{ description }}</div> \
+            <div v-on:click="toggle"> \
+                <i v-if="value" class=\x27fas fa-toggle-on\x27></i> \
+                <i v-else class=\x27fas fa-toggle-off\x27></i> \
+            </div> \
         </div>',
 });
 
@@ -193,7 +237,8 @@ $(function() {
                 } 
             },
             showSettings: function() {
-                
+                this.visible = false;
+                settings.visible = true;
             },
             hideSwitches: function() {
                 switches.visible = false;
@@ -205,6 +250,33 @@ $(function() {
                 }
                 webSocket.send(JSON.stringify(data));
             },
+        }
+    });
+    
+    settings = new Vue({
+        el: '#ctrl-settings-container',
+        data: {
+            visible: false,
+            settings: {}
+        },
+        methods: {
+            updateSettings: function(message) {
+                if ("settings" in message) {
+                    this.settings = Object.assign({}, message.settings);
+                }
+            },
+            hideSettings: function() {
+                settings.visible = false;
+            },
+            sendSetting: function(section, option, value) {
+                data = {
+                        setting: {
+                        }
+                };
+                data.setting[section] = {};
+                data.setting[section][option] = value;
+                webSocket.send(JSON.stringify(data));
+            }
         }
     });
     

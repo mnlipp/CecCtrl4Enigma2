@@ -122,7 +122,14 @@ class DeviceManager(Component):
         self._next_to_check = 0
         self._poll_timer = None
         self._poll_complete = False
+        self._power_on_audio = False
 
+    @handler("config_value", channel="configuration")
+    def _on_config_value(self, section, option, value):
+        if section == "device_manager":
+            if option == "power_on_audio":
+                self._power_on_audio = (value == "True")
+    
     @handler("started", channel="*")
     def _on_started(self, event, *args):
         # Request active source
@@ -216,8 +223,7 @@ class DeviceManager(Component):
     @handler("dev_send_key")
     def _on_dev_send_key(self, event):
         self.fire(cec_write(CecMessage(16, self._active_remote, 0x44, [event.code])), "cec")
-        self.fire(cec_write(CecMessage(16, self._active_remote, 0x45, [])), "cec")
-            
+
     @handler("dev_make_source")
     def _on_dev_make_source(self, event):
         if not event.logical_address in self._devices:
@@ -232,10 +238,13 @@ class DeviceManager(Component):
             return
         if device.type != 5:
             # Make sure that we see something, send "Image View On"
+            if self._power_on_audio:
+                self.fire(cec_write(CecMessage(16, 5, 0x44, [0x6d])), "cec")
             self.fire(cec_write(CecMessage(16, 0, 0x04, [])), "cec")
         # Special handling for switch to TV
         if event.logical_address == 0:
             if self._active_source > 0:
+                # Inactive Source
                 self.fire(cec_write(CecMessage(16, 0, 0x9d, [])
                                     .append_physical(self._devices[self._active_source]
                                                      .physical_address)), "cec")

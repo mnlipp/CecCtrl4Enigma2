@@ -17,8 +17,8 @@
 
 <body>
 
-  <div id="ctrl-switches-container" v-if="visible">
-    <div class="ctrl-switches-panel">
+  <div id="ctrl-switches-container" class="ctrl-popup-container" v-if="visible">
+    <div class="ctrl-switches-panel ctrl-popup-panel">
       <div class="ctrl-switches-settings"
         v-on:click="showSettings"><i class="fas fa-sliders-h"></i>
       </div>
@@ -33,6 +33,16 @@
       <div class="ctrl-switches-button ctrl-switches-off">
         <button v-on:click="allOff"><i class="fas fa-power-off"></i></button>
       </div>
+    </div>
+  </div>
+  
+  <div id="ctrl-settings-container" class="ctrl-popup-container" v-if="visible">
+    <div class="ctrl-settings-panel ctrl-popup-panel">
+      <div class="ctrl-settings-close"
+        v-on:click="hideSettings"><i class="fas fa-times"></i>
+      </div>
+      <cec-setting-bool v-bind:description="'Power on Audio with TV'"
+        v-bind:section="'device_manager'" v-bind:option="'power_on_audio'"></cec-setting-bool>
     </div>
   </div>
   

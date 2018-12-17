@@ -31,6 +31,7 @@ from .cec import cecCommands, CecMessage
 from .cecadapter import cec_write
 from devmanager import dev_report, dev_make_source, dev_send_key
 from circuits.io.events import write
+from circuits_bricks.app.config import config_value
 
 class RemotePage(TemplateController):
 
@@ -70,9 +71,26 @@ class RemoteControl(Component):
         super(RemoteControl, self).__init__(*args, **kwargs)
         self._connected = []
         self._active_remote = 0
+        self._dev_mgr_settings = {}
 
+    @handler("config_value", channel="configuration")
+    def _on_config_value(self, section, option, value):
+        if section == "device_manager":
+            self._dev_mgr_settings[option] = value
+            for sock in self._connected:
+                self._send_settings(sock)
+
+    def _send_settings(self, sock):
+        data = json.dumps({ 
+            "settings": {
+                "device_manager": self._dev_mgr_settings
+            }
+        })
+        self.fire(write(sock, data))
+    
     def connect(self, sock, *args):
         self._connected.append(sock)
+        self._send_settings(sock)
         self.fire(dev_report(), "dev-mgr")
         data = json.dumps({ 
             "activeRemote": self._active_remote
@@ -92,6 +110,12 @@ class RemoteControl(Component):
                 self.fire(cec_write(CecMessage(16, 15, 0x36, [])), "cec")
             elif "makeSource" in cmd:
                 self.fire(dev_make_source(cmd["makeSource"]["logical_address"]), "dev-mgr")
+            elif "setting" in cmd:
+                section = cmd["setting"].iterkeys().next()
+                option = cmd["setting"][section].iterkeys().next()
+                self.fire(config_value(section, option, 
+                                       str(cmd["setting"][section][option])),
+                                       "configuration")
         except:
             pass
 
@@ -121,3 +145,5 @@ class RemoteControl(Component):
         })
         for sock in self._connected:
             self.fire(write(sock, data))
+
+    
