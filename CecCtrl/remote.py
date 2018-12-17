@@ -51,8 +51,8 @@ class RemotePage(TemplateController):
             return
         return self.serve_tenjin(request, response, "remote.pyhtml", {})
     
-    @handler("dev_source_changed", channel="dev-mgr")
-    def _on_dev_source_changed(self, event):
+    @handler("dev_update_remote", channel="dev-mgr")
+    def _on_dev_update_remote(self, event):
         root = os.path.join(dirname(__file__), "templates", "remotes")
         device = event.device
         paths = []
@@ -69,10 +69,15 @@ class RemoteControl(Component):
     def __init__(self, *args, **kwargs):
         super(RemoteControl, self).__init__(*args, **kwargs)
         self._connected = []
+        self._active_remote = 0
 
     def connect(self, sock, *args):
         self._connected.append(sock)
         self.fire(dev_report(), "dev-mgr")
+        data = json.dumps({ 
+            "activeRemote": self._active_remote
+        })
+        self.fire(write(sock, data))
 
     def close(self, sock):
         self._connected.remove(sock)
@@ -108,8 +113,9 @@ class RemoteControl(Component):
         for sock in self._connected:
             self.fire(write(sock, data))
 
-    @handler("dev_source_changed", channel="dev-mgr", priority=-1)
-    def _on_dev_source_changed(self, event):
+    @handler("dev_update_remote", channel="dev-mgr", priority=-1)
+    def _on_dev_update_remote(self, event):
+        self._active_remote = event.device.logical_address
         data = json.dumps({ 
             "reload": {}
         })

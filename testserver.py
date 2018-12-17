@@ -25,29 +25,29 @@ class DummyAdapter(Component):
         msg = event.msg
         print "Sent: %s" % (msg)
         if msg.dstAddr == 0:
-            if msg.cmd == 0x83:
+            if msg.cmd == 0x83: # Give Physical Address
                 self.fire(cec_read(CecMessage(0, 15, 0x84, [0, 0, 1])))
-            if msg.cmd == 0x46:
+            if msg.cmd == 0x46: # Give OSD Name
                 self.fire(cec_read(CecMessage(0, 15, 0x47, list(map(ord,"TV")))))
         if msg.dstAddr == 3:
-            if msg.cmd == 0x83:
+            if msg.cmd == 0x83: # Give Physical Address
                 self.fire(cec_read(CecMessage(3, 15, 0x84, [0x20, 0, 3])))
-            if msg.cmd == 0x46:
+            if msg.cmd == 0x46: # Give OSD Name
                 self.fire(cec_read(CecMessage(3, 15, 0x47, list(map(ord,"vuultimo")))))
         if msg.dstAddr == 5:
-            if msg.cmd == 0x83:
+            if msg.cmd == 0x83: # Give Physical Address
                 self.fire(cec_read(CecMessage(5, 15, 0x84, [0x40, 0, 5])))
-            if msg.cmd == 0x46:
+            if msg.cmd == 0x46: # Give OSD Name
                 self.fire(cec_read(CecMessage(5, 15, 0x47, list(map(ord,"AV/Receiver")))))
-        if msg.cmd == 0x85:
+        if msg.cmd == 0x85:# Request Active Source
             if self._active_source == 3:
                 self.fire(cec_read(CecMessage(3, 15, 0x82, []).append_physical([2,0,0,0])))
             if self._active_source == 5:
                 self.fire(cec_read(CecMessage(5, 15, 0x82, []).append_physical([4,0,0,0])))
-        if msg.cmd == 0x8c:
+        if msg.cmd == 0x8c: # Give Device Vendor ID
             if self._active_source == 3:
                 self.fire(cec_read(CecMessage(3, 15, 0x87, [0, 0, 0])))
-        if msg.cmd == 0x86:
+        if msg.cmd == 0x86: # Set Stream Path
             if msg.data == [0x20,0x0]:
                 self.fire(cec_read(CecMessage(3, 15, 0x82, []).append_physical([2,0,0,0])))
             if msg.data == [0x40,0x0]:

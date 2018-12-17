@@ -47,10 +47,18 @@ html, body {
 .ctrl-switches-button .fas {
 }
 
+.ctrl-switches-settings {
+	position: absolute;
+	left: 0.5em;
+	top: 0.5em;
+	font-size: 125%;
+}
+
 .ctrl-switches-close {
 	position: absolute;
 	right: 0.5em;
 	top: 0.5em;
+	font-size: 125%;
 }
 
 /* Remote panel */

@@ -19,6 +19,9 @@
 
   <div id="ctrl-switches-container" v-if="visible">
     <div class="ctrl-switches-panel">
+      <div class="ctrl-switches-settings"
+        v-on:click="showSettings"><i class="fas fa-sliders-h"></i>
+      </div>
       <div class="ctrl-switches-close"
         v-on:click="hideSwitches"><i class="fas fa-times"></i>
       </div>

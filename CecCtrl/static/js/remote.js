@@ -128,6 +128,11 @@ Vue.component("cec-remote-device", {
         return {
         };
     },
+    computed: {
+        isActive: function() {
+            return this.addr == this.$parent.activeRemote;
+        }
+    },
     methods: {
         makeSource: function() {
             data = {
@@ -141,7 +146,9 @@ Vue.component("cec-remote-device", {
     },
     template: '\
         <div class="cec-device-control"> \
-            <button v-on:click="makeSource">{{ name }}</button> \
+            <button v-on:click="makeSource"> \
+                <i v-if="isActive" class=\x27fas fa-hand-point-right\x27></i> \
+                {{ name }}</button> \
         </div>',
 });
 
@@ -153,6 +160,7 @@ $(function() {
         data: {
             visible: false,
             devices: [ ],
+            activeRemote: 0,
         },
         computed: {
         },
@@ -180,6 +188,12 @@ $(function() {
                         })
                     }
                 }
+                if ("activeRemote" in message) {
+                    this.activeRemote = message.activeRemote;
+                } 
+            },
+            showSettings: function() {
+                
             },
             hideSwitches: function() {
                 switches.visible = false;

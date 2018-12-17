@@ -117,7 +117,8 @@ class DeviceManager(Component):
         super(DeviceManager, self).__init__(*args, **kwargs)
         self._devices = {}
         self._active_source = -1
-        self._active_change_pending = False
+        self._active_source_change_pending = False
+        self._active_remote = 0
         self._next_to_check = 0
         self._poll_timer = None
         self._poll_complete = False
@@ -194,17 +195,18 @@ class DeviceManager(Component):
             if msg.cmd == 0x82: # Active source
                 if self._active_source != msg.srcAddr:
                     self._active_source = msg.srcAddr
-                    self._active_change_pending = True
+                    self._active_source_change_pending = True
         except:
             # We sometimes get faulty messages...
             pass
         if not self._poll_complete:
             return
         # Pending change of active source?
-        if self._active_change_pending and device.physical_address:
+        if self._active_source_change_pending and device.physical_address:
             # We have collected everything required (and most of the optional infos)
-            self.fire(dev_source_changed(device))
-            self._active_change_pending = False
+            self._active_remote = device.logical_address
+            self.fire(dev_update_remote(device))
+            self._active_source_change_pending = False
 
     @handler("dev_report")
     def _on_dev_report(self, event):
@@ -213,9 +215,8 @@ class DeviceManager(Component):
 
     @handler("dev_send_key")
     def _on_dev_send_key(self, event):
-        if self._active_source >= 0: 
-            self.fire(cec_write(CecMessage(16, self._active_source, 0x44, [event.code])), "cec")
-            self.fire(cec_write(CecMessage(16, self._active_source, 0x45, [])), "cec")
+        self.fire(cec_write(CecMessage(16, self._active_remote, 0x44, [event.code])), "cec")
+        self.fire(cec_write(CecMessage(16, self._active_remote, 0x45, [])), "cec")
             
     @handler("dev_make_source")
     def _on_dev_make_source(self, event):
@@ -239,7 +240,7 @@ class DeviceManager(Component):
                                     .append_physical(self._devices[self._active_source]
                                                      .physical_address)), "cec")
             if self._devices[0]:
-                self.fire(dev_source_changed(self._devices[0]))
+                self.fire(dev_update_remote(self._devices[0]))
             return
         # Set Stream Path
         self.fire(cec_write(CecMessage(16, 15, 0x86, [])
@@ -272,13 +273,13 @@ class dev_make_source(Event):
         super(dev_make_source, self).__init__(*args, **kwargs)
         self.logical_address = logical_address
 
-class dev_source_changed(Event):
+class dev_update_remote(Event):
     """
-    Reports a change of the active device.
+    Reports a change of the remote to be displayed.
     """
     
     def __init__(self, device, *args, **kwargs):
-        super(dev_source_changed, self).__init__(*args, **kwargs)
+        super(dev_update_remote, self).__init__(*args, **kwargs)
         self.device = device
 
 class dev_send_key(Event): 
