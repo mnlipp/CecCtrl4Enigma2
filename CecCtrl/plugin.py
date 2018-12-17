@@ -20,7 +20,7 @@ def plugin_start(reason, **kwargs):
 	        },
 	}
 
-	server = CecCtrlServer(CONFIG, { "config_dir": "/etc/cecctrl",
+	server = CecCtrlServer(CONFIG, { "config_dir": "/etc/enigma2/cecctrl",
 								"app_dir": "/var/lib/cecctrl" })
 	E2Adapter().register(server)
 	server.start()
