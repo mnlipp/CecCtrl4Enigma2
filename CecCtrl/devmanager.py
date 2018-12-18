@@ -103,14 +103,133 @@ class Device(object):
                self.logical_address,
                ":".join(map(str,self.physical_address)) if self.physical_address else "?")
 
+class Interactor(object):
+    """
+    Base class for all interactors.
+    """
+    def __init__(self, device_manager, *args, **kwargs):
+        super(Interactor, self).__init__(*args, **kwargs)
+        self._dev_mgr = device_manager
+        self._is_done = False
+        
+    def start(self):
+        pass
+    
+    def handle_message(self, msg):
+        pass
+    
+    def handle_timeout(self):
+        pass
+    
+    def isDone(self):
+        return self._is_done
+        
+    def _done(self):
+        self._is_done = True
+        
+    def _set_timeout(self, wait_time):
+        self._dev_mgr.set_interactor_timeout(wait_time)
+        
+    def _send_message(self, msg):
+        self._dev_mgr.fire(cec_write(msg), "cec")
+
+
+class SendMessage(Interactor):
+    """
+    An interactor that simply sends a message.
+    """
+    def __init__(self, device_manager, message, *args, **kwargs):
+        super(SendMessage, self).__init__(device_manager, *args, **kwargs)
+        self._message = message
+
+    def start(self):
+        self._send_message(self._message)
+        self._done()
+
+
+class PowerOnTv(Interactor):
+    """
+    An interactor that powers on the TV.
+    """
+    def __init__(self, device_manager, *args, **kwargs):
+        super(PowerOnTv, self).__init__(device_manager, *args, **kwargs)
+        self._attempts = 0
+
+    def start(self):
+        self._power_on()
+
+    def _power_on(self):
+        if self._attempts == 9:
+            # Give up
+            self._done()
+            return
+        if self._attempts % 3 == 0:
+            # "Push" power on
+            self._send_message(CecMessage(16, 0, 0x04, []))            
+        # Request power status
+        self._send_message(CecMessage(16, 0, 0x8f, []))
+        self._set_timeout(1)
+        self._attempts += 1
+
+    def handle_message(self, msg):
+        if msg.cmd == 0x90 and msg.srcAddr == 0:
+            if msg.data[0] == 0:
+                self._done()
+                return
+            self._power_on()
+    
+    def handle_timeout(self):
+        self._power_on()
+    
+
+class PowerOnAudio(Interactor):
+    """
+    An interactor that powers on the audio device.
+    """
+    def __init__(self, device_manager, *args, **kwargs):
+        super(PowerOnAudio, self).__init__(device_manager, *args, **kwargs)
+        self._attempts = 0
+
+    def start(self):
+        self._power_on()
+
+    def _power_on(self):
+        if self._attempts == 9:
+            # Give up
+            self._done()
+            return
+        if self._attempts % 3 == 0:
+            # "Push" power on
+            self._send_message(CecMessage(16, 5, 0x44, [0x6d]))            
+            self._send_message(CecMessage(16, 5, 0x45, []))            
+        # Request power status
+        self._send_message(CecMessage(16, 5, 0x8f, []))
+        self._set_timeout(1)
+        self._attempts += 1
+
+    def handle_message(self, msg):
+        if msg.cmd == 0x90 and msg.srcAddr == 5:
+            if msg.data[0] == 0:
+                self._done()
+                return
+            self._power_on()
+    
+    def handle_timeout(self):
+        self._power_on()
+    
+
 class poll_next_info(Event):
     pass
+
+
+class interactor_timeout(Event):
+    pass
+
 
 class DeviceManager(Component):
     """
     A directory of all known devices.
     """
-
     channel = "dev-mgr"
 
     def __init__(self, *args, **kwargs):
@@ -122,6 +241,10 @@ class DeviceManager(Component):
         self._next_to_check = 0
         self._poll_timer = None
         self._poll_complete = False
+        # Interactor support
+        self._interactor_queue = []
+        self._interactor_timer = None
+        # Settings
         self._power_on_audio = False
 
     @handler("config_value", channel="configuration")
@@ -130,6 +253,40 @@ class DeviceManager(Component):
             if option == "power_on_audio":
                 self._power_on_audio = (value == "True")
     
+    def _interact(self, interactor):
+        self._interactor_queue.append(interactor)
+        if len(self._interactor_queue) == 1:
+            interactor.start()
+            self._check_interactor_queue()
+
+    def _check_interactor_queue(self):
+        while True:
+            if len(self._interactor_queue) == 0 \
+                    or not self._interactor_queue[0].isDone():
+                return
+            # Done with this one
+            if self._interactor_timer:
+                self._interactor_timer.unregister()
+                self._interactor_timer = None
+            self._interactor_queue.pop(0)
+            if len(self._interactor_queue) > 0:
+                self._interactor_queue[0].start()
+            
+    def set_interactor_timeout(self, wait_time):
+        if self._interactor_timer or wait_time == 0:
+            self._interactor_timer.unregister()
+        if wait_time > 0:
+            Timer(wait_time, interactor_timeout(), "dev-mgr").register(self)
+    
+    @handler("interactor_timeout")
+    def _on_interactor_timeout(self, event):
+        self._interactor_timer = None
+        # fail safe
+        if len(self._interactor_queue) == 0:
+            return
+        self._interactor_queue[0].handle_timeout()
+        self._check_interactor_queue()
+            
     @handler("started", channel="*")
     def _on_started(self, event, *args):
         # Request active source
@@ -178,6 +335,19 @@ class DeviceManager(Component):
     @handler("cec_read", channel="cec")
     def _on_cec_read(self, event):
         msg = event.msg
+
+        # State changes            
+        if msg.cmd == 0x82: # Active source
+            if self._active_source != msg.srcAddr:
+                self._active_source = msg.srcAddr
+                self._active_source_change_pending = True
+
+        # Forward to interactors
+        if len(self._interactor_queue) > 0:
+            self._interactor_queue[0].handle_message(msg)
+            self._check_interactor_queue()
+    
+        # Update our model of existing devices and their state
         if msg.srcAddr == 15:
             # Source is broadcast, nothing to gain here
             return
@@ -199,10 +369,6 @@ class DeviceManager(Component):
                 self.fire(log(logging.INFO, "Updated: %s" % (device)), "logger")
             if msg.cmd == 0x87: # Device Vendor ID
                 device.vendor_id = msg.data[0] << 16 | msg.data[1] << 8 | msg.data[2]
-            if msg.cmd == 0x82: # Active source
-                if self._active_source != msg.srcAddr:
-                    self._active_source = msg.srcAddr
-                    self._active_source_change_pending = True
         except:
             # We sometimes get faulty messages...
             pass
@@ -223,9 +389,13 @@ class DeviceManager(Component):
     @handler("dev_send_key")
     def _on_dev_send_key(self, event):
         self.fire(cec_write(CecMessage(16, self._active_remote, 0x44, [event.code])), "cec")
+        self.fire(cec_write(CecMessage(16, self._active_remote, 0x45, [])), "cec")
 
     @handler("dev_make_source")
     def _on_dev_make_source(self, event):
+        self._active_remote = event.logical_address
+        if self._devices[self._active_remote]:
+            self.fire(dev_update_remote(self._devices[self._active_remote]))
         if not event.logical_address in self._devices:
             self.fire(log(logging.DEBUG, "Cannot make source: unknown device %d"
                           % (event.logical_address)), "logger")
@@ -237,23 +407,22 @@ class DeviceManager(Component):
                           % (event.logical_address)), "logger")
             return
         if device.type != 5:
-            # Make sure that we see something, send "Image View On"
+            # Make sure that we see something, Power on TV and maybe audio
+            self._interact(PowerOnTv(self))
             if self._power_on_audio:
-                self.fire(cec_write(CecMessage(16, 5, 0x44, [0x6d])), "cec")
-            self.fire(cec_write(CecMessage(16, 0, 0x04, [])), "cec")
+                self._interact(PowerOnAudio(self))
         # Special handling for switch to TV
         if event.logical_address == 0:
             if self._active_source > 0:
                 # Inactive Source
-                self.fire(cec_write(CecMessage(16, 0, 0x9d, [])
-                                    .append_physical(self._devices[self._active_source]
-                                                     .physical_address)), "cec")
-            if self._devices[0]:
-                self.fire(dev_update_remote(self._devices[0]))
+                self._interact(SendMessage(self,CecMessage(16, 0, 0x9d, [])
+                                           .append_physical(
+                                               self._devices[self._active_source]
+                                               .physical_address)))
             return
         # Set Stream Path
-        self.fire(cec_write(CecMessage(16, 15, 0x86, [])
-                            .append_physical(device.physical_address)), "cec")
+        self._interact(SendMessage(self, CecMessage(16, 15, 0x86, [])
+                                   .append_physical(device.physical_address)))
 
 class dev_status(Event):
     """
