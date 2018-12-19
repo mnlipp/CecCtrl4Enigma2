@@ -43,6 +43,10 @@
       </div>
       <cec-setting-bool v-bind:description="'Power on Audio with TV'"
         v-bind:section="'device_manager'" v-bind:option="'power_on_audio'"></cec-setting-bool>
+      <cec-setting-bool v-bind:description="'Synchronize ARC'"
+        v-bind:section="'device_manager'" v-bind:option="'synchronize_arc'"></cec-setting-bool>
+      <cec-setting-bool v-bind:description="'Use Audio for Volume Control'"
+        v-bind:section="'device_manager'" v-bind:option="'volume_to_audio'"></cec-setting-bool>
     </div>
   </div>
   

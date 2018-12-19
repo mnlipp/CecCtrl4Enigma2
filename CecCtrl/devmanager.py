@@ -245,6 +245,7 @@ class DeviceManager(Component):
         # Settings
         self._power_on_audio = False
         self._synchronize_arc = False
+        self._volume_to_audio = False
 
     @handler("config_value", channel="configuration")
     def _on_config_value(self, section, option, value):
@@ -253,6 +254,8 @@ class DeviceManager(Component):
                 self._power_on_audio = (value == "True")
             if option == "synchronize_arc":
                 self._synchronize_arc = (value == "True")
+            if option == "volume_to_audio":
+                self._volume_to_audio = (value == "True")
     
     def _interact(self, interactor):
         self._interactor_queue.append(interactor)
@@ -408,8 +411,11 @@ class DeviceManager(Component):
 
     @handler("dev_send_key")
     def _on_dev_send_key(self, event):
-        self.fire(cec_write(CecMessage(16, self._active_remote, 0x44, [event.code])), "cec")
-        self.fire(cec_write(CecMessage(16, self._active_remote, 0x45, [])), "cec")
+        dest = self._active_remote
+        if self._volume_to_audio and event.code in [0x41, 0x42, 0x43]:
+            dest = 5
+        self.fire(cec_write(CecMessage(16, dest, 0x44, [event.code])), "cec")
+        self.fire(cec_write(CecMessage(16, dest, 0x45, [])), "cec")
 
     @handler("dev_make_source")
     def _on_dev_make_source(self, event):
