@@ -176,7 +176,6 @@ class PowerOnTv(Interactor):
             if msg.data[0] == 0:
                 self._done()
                 return
-            self._power_on()
     
     def handle_timeout(self):
         self._power_on()
@@ -212,7 +211,6 @@ class PowerOnAudio(Interactor):
             if msg.data[0] == 0:
                 self._done()
                 return
-            self._power_on()
     
     def handle_timeout(self):
         self._power_on()
@@ -246,12 +244,15 @@ class DeviceManager(Component):
         self._interactor_timer = None
         # Settings
         self._power_on_audio = False
+        self._synchronize_arc = False
 
     @handler("config_value", channel="configuration")
     def _on_config_value(self, section, option, value):
         if section == "device_manager":
             if option == "power_on_audio":
                 self._power_on_audio = (value == "True")
+            if option == "synchronize_arc":
+                self._synchronize_arc = (value == "True")
     
     def _interact(self, interactor):
         self._interactor_queue.append(interactor)
@@ -341,6 +342,25 @@ class DeviceManager(Component):
             if self._active_source != msg.srcAddr:
                 self._active_source = msg.srcAddr
                 self._active_source_change_pending = True
+            # ARC on/off
+            if self._synchronize_arc:
+                if msg.srcAddr in self._devices \
+                        and self._devices[msg.srcAddr].physical_address \
+                        and 5 in self._devices \
+                        and self._devices[5].physical_address:
+                    active_device = self._devices[msg.srcAddr]
+                    audio_physical = self._devices[5].physical_address
+                    arcMode = True
+                    for i in range(4):
+                        if audio_physical[i] == active_device.physical_address[i]:
+                            continue
+                        if audio_physical[i] == 0:
+                            arcMode = False
+                            break
+                    if arcMode:
+                        self._interact(SendMessage(self,CecMessage(16, 5, 0xc3, [])))
+                    else:
+                        self._interact(SendMessage(self,CecMessage(16, 5, 0xc4, [])))
 
         # Forward to interactors
         if len(self._interactor_queue) > 0:
