@@ -26,6 +26,8 @@ from .cecadapter import cec_read
 import new
 from .cec import CecMessage
 from circuits.core.handlers import handler
+import logging
+from circuits_bricks.app.logger import log
 import sys
 import traceback
 import ctypes
@@ -204,17 +206,27 @@ class E2Adapter(Component):
         # enigma (or broadcasts) must be "received"
         if event.msg.dstAddr == 15 \
             or event.msg.dstAddr != eHdmiCEC.getInstance().getLogicalAddress():
+            # Send to other devices.
+            msg = CecMessage(event.msg.srcAddr, event.msg.dstAddr, 
+                             event.msg.cmd, event.msg.data)
+            # "Set Stream Path" to this device does not work. Must be mapped
+            # to "Set Source"
+            if msg.cmd == 0x86:
+                physAddr = msg.data[0] << 8 | msg.data[1]
+                if physAddr == eHdmiCEC.getInstance().getPhysicalAddress():
+                    msg.cmd = 0x82
             def send():
-                dataStr = "".join(map(chr, event.msg.data))
+                dataStr = "".join(map(chr, msg.data))
                 if self._original_send:
                     self._send_slotted(eHdmiCEC.getInstance(),
-                        event.msg.dstAddr, event.msg.cmd, dataStr, len(dataStr), False)
+                        msg.dstAddr, msg.cmd, dataStr, len(dataStr), False)
                 else:
                     eHdmiCEC.getInstance().sendMessage(
-                        event.msg.dstAddr, event.msg.cmd, dataStr, len(dataStr))
+                        msg.dstAddr, msg.cmd, dataStr, len(dataStr))
             callOnMainThread(send)
         if event.msg.dstAddr == 15 \
             or event.msg.dstAddr == eHdmiCEC.getInstance().getLogicalAddress():
+            # Forward to enigma (i.e. other components.)
             def forward():
                 self._forward(event.msg)
             callOnMainThread(forward)
